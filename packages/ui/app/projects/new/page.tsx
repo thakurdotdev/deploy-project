@@ -1,19 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,11 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Trash2, Plus, Eye, EyeOff } from "lucide-react";
+import { api } from "@/lib/api";
+import { Check, Eye, EyeOff, Loader2, Plus, Trash2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function NewProject() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     github_url: "",
@@ -37,6 +37,25 @@ export default function NewProject() {
 
   const [envVars, setEnvVars] = useState<{ key: string; value: string }[]>([]);
   const [showValues, setShowValues] = useState(false);
+
+  const [subdomainStatus, setSubdomainStatus] = useState<
+    "idle" | "loading" | "available" | "unavailable"
+  >("idle");
+  const [subdomainError, setSubdomainError] = useState("");
+
+  const checkSubdomain = async () => {
+    if (!formData.domain) return;
+    setSubdomainStatus("loading");
+    setSubdomainError("");
+    try {
+      const { available } = await api.checkDomainAvailability(formData.domain);
+      setSubdomainStatus(available ? "available" : "unavailable");
+    } catch (e: any) {
+      console.error(e);
+      setSubdomainStatus("idle"); // Reset to idle to allow retry
+      setSubdomainError(e.message || "Failed to check");
+    }
+  };
 
   const addEnvVar = () => {
     setEnvVars([...envVars, { key: "", value: "" }]);
@@ -67,7 +86,12 @@ export default function NewProject() {
 
       // Parse pasted text
       text.split("\n").forEach((line) => {
-        const match = line.match(/^([^=]+)=(.*)$/);
+        const trimmed = line.trim();
+
+        // Skip commented or empty lines
+        if (!trimmed || trimmed.startsWith("#")) return;
+
+        const match = trimmed.match(/^([^=]+)=(.*)$/);
         if (match) {
           newVars.push({ key: match[1].trim(), value: match[2].trim() });
         }
@@ -89,7 +113,7 @@ export default function NewProject() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent, deploy: boolean = false) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -100,12 +124,9 @@ export default function NewProject() {
 
       const project = await api.createProject({
         ...formData,
+        domain: formData.domain ? `${formData.domain}.thakur.dev` : "",
         env_vars: envVarsRecord,
       });
-
-      if (deploy) {
-        await api.triggerBuild(project.id);
-      }
       router.push(`/projects/${project.id}`);
     } catch (error) {
       console.error(error);
@@ -207,15 +228,51 @@ export default function NewProject() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="domain">Custom Domain (Optional)</Label>
-                <Input
-                  id="domain"
-                  placeholder="app.example.com"
-                  value={formData.domain}
-                  onChange={(e) =>
-                    setFormData({ ...formData, domain: e.target.value })
-                  }
-                />
+                <Label htmlFor="domain">Subdomain</Label>
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1 flex max-w-sm items-center space-x-2">
+                    <Input
+                      id="domain"
+                      placeholder="my-app"
+                      value={formData.domain}
+                      onChange={(e) => {
+                        setFormData({ ...formData, domain: e.target.value });
+                        setSubdomainStatus("idle");
+                        setSubdomainError("");
+                      }}
+                      className="text-right"
+                    />
+                    <span className="text-muted-foreground whitespace-nowrap">
+                      .thakur.dev
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={checkSubdomain}
+                    disabled={!formData.domain || subdomainStatus === "loading"}
+                  >
+                    {subdomainStatus === "loading" ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Check"
+                    )}
+                  </Button>
+                </div>
+                {subdomainStatus === "available" && (
+                  <p className="text-sm text-green-500 flex items-center gap-1">
+                    <Check className="h-3 w-3" /> Available
+                  </p>
+                )}
+                {subdomainStatus === "unavailable" && (
+                  <p className="text-sm text-destructive flex items-center gap-1">
+                    <X className="h-3 w-3" /> Domain is taken
+                  </p>
+                )}
+                {subdomainError && (
+                  <p className="text-sm text-destructive">{subdomainError}</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -307,13 +364,20 @@ export default function NewProject() {
                         const text = e.clipboardData.getData("text");
                         const newVars: { key: string; value: string }[] = [];
                         text.split("\n").forEach((line) => {
-                          const match = line.match(/^([^=]+)=(.*)$/);
-                          if (match)
+                          const trimmed = line.trim();
+
+                          // Skip commented or empty lines
+                          if (!trimmed || trimmed.startsWith("#")) return;
+
+                          const match = trimmed.match(/^([^=]+)=(.*)$/);
+                          if (match) {
                             newVars.push({
                               key: match[1].trim(),
                               value: match[2].trim(),
                             });
+                          }
                         });
+
                         if (newVars.length > 0) setEnvVars(newVars);
                       }}
                       autoFocus
@@ -336,18 +400,11 @@ export default function NewProject() {
           </Button>
           <Button
             type="button"
-            variant="secondary"
+            variant="default"
             disabled={loading}
-            onClick={(e) => handleSubmit(e, false)}
+            onClick={(e) => handleSubmit(e)}
           >
             Create Project
-          </Button>
-          <Button
-            type="button"
-            disabled={loading}
-            onClick={(e) => handleSubmit(e, true)}
-          >
-            Create & Deploy
           </Button>
         </div>
       </form>

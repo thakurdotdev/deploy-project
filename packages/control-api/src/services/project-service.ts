@@ -61,6 +61,17 @@ export const ProjectService = {
       nextPort++;
     }
 
+    // Determine domain (Auto-generate in Production if missing)
+    let domain = data.domain?.trim() || null;
+    if (process.env.NODE_ENV === "production" && !domain) {
+      const baseDomain = process.env.BASE_DOMAIN || "thakur.dev";
+      const slug = data.name
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/^-+|-+$/g, "");
+      domain = `${slug}.${baseDomain}`;
+    }
+
     const result = await db
       .insert(projects)
       .values({
@@ -69,7 +80,7 @@ export const ProjectService = {
         build_command: data.build_command,
         app_type: data.app_type,
         root_directory: data.root_directory,
-        domain: data.domain?.trim() || null,
+        domain: domain,
         port: nextPort,
       })
       .returning();
@@ -105,35 +116,45 @@ export const ProjectService = {
     const project = await this.getById(id);
     if (!project) return null;
 
-    // 1. Call Deploy Engine to cleanup
+    // 1. Get all builds for this project to clean up artifacts
+    const { builds, deployments, environmentVariables } = await import(
+      "../db/schema"
+    );
+
+    const projectBuilds = await db
+      .select({ id: builds.id })
+      .from(builds)
+      .where(eq(builds.project_id, id));
+    const buildIds = projectBuilds.map((b) => b.id);
+
+    // 2. Call Deploy Engine to cleanup
     const deployEngineUrl =
       process.env.DEPLOY_ENGINE_URL || "http://localhost:4002";
     try {
       if (project.port) {
-        const subdomain = project.name
-          .toLowerCase()
-          .replace(/[^a-z0-9-]/g, "-")
-          .replace(/^-+|-+$/g, "");
+        const subdomain =
+          project.domain?.split(".")[0] ||
+          project.name
+            .toLowerCase()
+            .replace(/[^a-z0-9-]/g, "-")
+            .replace(/^-+|-+$/g, "");
+
         await fetch(`${deployEngineUrl}/projects/${id}/delete`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ port: project.port, subdomain }),
+          body: JSON.stringify({
+            port: project.port,
+            subdomain,
+            buildIds, // Send build IDs for artifact cleanup
+          }),
         });
       }
     } catch (e) {
       console.error("Failed to cleanup on Deploy Engine", e);
-      // Continue with DB deletion even if cleanup fails?
-      // Yes, otherwise user is stuck.
+      // Continue with DB deletion even if cleanup fails
     }
 
-    // 2. Cascade delete in DB
-    // Assuming no CASCADE constraint in DB, we do it manually or rely on Drizzle if configured.
-    // Schema didn't explicitly show ON DELETE CASCADE, so safe to manual delete.
-    // Actually, let's check schema imports.
-    // We need to import tables.
-    const { builds, deployments, environmentVariables } = await import(
-      "../db/schema"
-    );
+    // 3. Cascade delete in DB
 
     await db.transaction(async (tx) => {
       // Delete env vars

@@ -146,7 +146,11 @@ export default function ProjectDetails() {
           {activeDeployment && (
             <Button variant="secondary" asChild className="gap-2">
               <a
-                href={`http://${project.domain || "localhost"}:${project.port}`}
+                href={
+                  project.domain
+                    ? `https://${project.domain}`
+                    : `http://localhost:${project.port}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -170,44 +174,46 @@ export default function ProjectDetails() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <div
-                  className={`w-2 h-2 rounded-full ${
+                  className={`w-2 h-2 rounded-full justify-between ${
                     activeDeployment
                       ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
                       : "bg-gray-400"
                   }`}
                 />
                 Production Deployment
-              </CardTitle>
-              {activeDeployment && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="h-7 text-xs shadow-sm hover:shadow-md transition-all z-10"
-                  onClick={(e) => {
-                    // Prevent event bubbling if any
-                    e.stopPropagation();
-                    if (
-                      !confirm("Are you sure you want to stop this deployment?")
-                    )
-                      return;
+                {activeDeployment && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-7 text-xs shadow-sm hover:shadow-md transition-all z-10"
+                    onClick={(e) => {
+                      // Prevent event bubbling if any
+                      e.stopPropagation();
+                      if (
+                        !confirm(
+                          "Are you sure you want to stop this deployment?",
+                        )
+                      )
+                        return;
 
-                    api
-                      .stopDeployment(id)
-                      .then(() => {
-                        // Refresh data immediately
-                        refreshData();
-                        // Also clear local state to give instant feedback
-                        setActiveDeployment(null);
-                      })
-                      .catch((e) => {
-                        console.error(e);
-                        alert("Failed to stop deployment");
-                      });
-                  }}
-                >
-                  Stop
-                </Button>
-              )}
+                      api
+                        .stopDeployment(id)
+                        .then(() => {
+                          // Refresh data immediately
+                          refreshData();
+                          // Also clear local state to give instant feedback
+                          setActiveDeployment(null);
+                        })
+                        .catch((e) => {
+                          console.error(e);
+                          alert("Failed to stop deployment");
+                        });
+                    }}
+                  >
+                    Stop
+                  </Button>
+                )}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {activeDeployment ? (

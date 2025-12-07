@@ -94,4 +94,12 @@ export const api = {
     if (!res.ok) throw new Error("Failed to stop deployment");
     return res.json();
   },
+  async checkDomainAvailability(subdomain: string) {
+    const res = await fetch(`${API_URL}/domains/check?subdomain=${subdomain}`);
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Failed to check domain");
+    }
+    return res.json() as Promise<{ available: boolean }>;
+  },
 };

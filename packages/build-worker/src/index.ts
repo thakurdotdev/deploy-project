@@ -36,8 +36,8 @@ const worker = new Worker(
     connection,
     concurrency: 1,
     // Optimize for lower Redis usage
-    lockDuration: 60000, // 60s
-    stalledInterval: 60000, // Check for stalled jobs every 60s (default 30s)
+    lockDuration: 300000, // 5 minutes (was 60s)
+    stalledInterval: 300000, // Check for stalled jobs every 5 mins
   },
 );
 

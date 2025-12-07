@@ -3,8 +3,8 @@ import { unlink, symlink } from "fs/promises";
 import { join } from "path";
 
 const BASE_DOMAIN = process.env.BASE_DOMAIN || "thakur.dev";
-const AVAILABLE_DIR = "/etc/nginx/sites-available";
-const ENABLED_DIR = "/etc/nginx/sites-enabled";
+const AVAILABLE_DIR = process.env.NGINX_SITES_DIR!;
+const ENABLED_DIR = process.env.NGINX_SITES_DIR!;
 
 const RESERVED = [
   "www",
@@ -30,26 +30,43 @@ export const NginxService = {
   },
 
   generateConfig(sub: string, port: number) {
-    return `server {
-    listen 80;
-    server_name ${sub}.${BASE_DOMAIN};
+    return `
+    server {
+        listen 80;
+        server_name ${sub}.${BASE_DOMAIN};
 
-    location / {
-        proxy_pass http://localhost:${port};
-        proxy_http_version 1.1;
-
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-
-        proxy_read_timeout 300;
-        proxy_connect_timeout 300;
-        proxy_send_timeout 300;
+        # Redirect all HTTP to HTTPS
+        return 301 https://$host$request_uri;
     }
-}`;
+
+    server {
+        listen 443 ssl;
+        server_name ${sub}.${BASE_DOMAIN};
+
+        # Wildcard certificate for *.thakur.dev
+        ssl_certificate     /etc/letsencrypt/live/${BASE_DOMAIN}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${BASE_DOMAIN}/privkey.pem;
+
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+
+        location / {
+            proxy_pass http://localhost:${port};
+            proxy_http_version 1.1;
+
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            proxy_read_timeout 300;
+            proxy_connect_timeout 300;
+            proxy_send_timeout 300;
+        }
+    }
+    `;
   },
 
   async createConfig(sub: string, port: number) {
@@ -80,6 +97,44 @@ export const NginxService = {
     if (existsSync(available)) await unlink(available);
 
     await this.reload();
+  },
+
+  async createDefaultConfig() {
+    const content = `
+    server {
+        listen 80 default_server;
+        server_name _;
+        return 404 "Site not found: No project deployed at this subdomain.";
+    }
+
+    server {
+        listen 443 ssl default_server;
+        server_name _;
+        
+        # We assume wildcard certs are available
+        ssl_certificate     /etc/letsencrypt/live/\${BASE_DOMAIN}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/\${BASE_DOMAIN}/privkey.pem;
+
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+
+        return 404 "Site not found: No project deployed at this subdomain.";
+    }
+    `;
+
+    const available = join(AVAILABLE_DIR, "00-default.conf");
+    const enabled = join(ENABLED_DIR, "00-default.conf");
+
+    try {
+      await Bun.write(available, content);
+      if (!existsSync(enabled)) {
+        await symlink(available, enabled);
+      }
+      await this.reload();
+      console.log("[NginxService] Default catch-all config created.");
+    } catch (error) {
+      console.error("[NginxService] Failed to create default config:", error);
+    }
   },
 
   async reload() {

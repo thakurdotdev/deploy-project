@@ -1,31 +1,43 @@
+import { cors } from "@elysiajs/cors";
+import { Elysia } from "elysia";
 import {
   createServer,
   type IncomingMessage,
   type ServerResponse,
 } from "node:http";
-import { Elysia } from "elysia";
-import { cors } from "@elysiajs/cors";
 import { Server as IOServer } from "socket.io";
-import { WebSocketService } from "./ws";
-import { projectsRoutes } from "./routes/projects";
+import { auth } from "./lib/auth";
 import { buildsRoutes } from "./routes/builds";
-import { envRoutes } from "./routes/env";
 import { deploymentsRoutes } from "./routes/deployments";
+import { domainsRoutes } from "./routes/domains";
+import { envRoutes } from "./routes/env";
+import { projectsRoutes } from "./routes/projects";
+import { WebSocketService } from "./ws";
 
 // 1. Create your Elysia app
 const app = new Elysia()
-  .use(cors({ origin: "*" }))
+  .use(
+    cors({
+      origin: process.env.CLIENT_URL!,
+      credentials: true,
+      allowedHeaders: ["Content-Type", "Authorization"],
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    }),
+  )
   .use(projectsRoutes)
   .use(buildsRoutes)
   .use(envRoutes)
   .use(deploymentsRoutes)
-  .get("/", () => "Hello from Control API");
+  .use(domainsRoutes)
+  .mount(auth.handler)
+  .get("/", () => "Hello from Thakur Deploy");
 
 // 2. Create Socket.IO server
 const io = new IOServer({
   cors: {
-    origin: "*",
+    origin: process.env.CLIENT_URL!,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 

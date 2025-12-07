@@ -82,17 +82,23 @@ export const DeployService = {
       paths.projectDir,
     );
 
-    // 7. Configure Nginx Proxy
-    try {
-      console.log(`[DeployService] Configuring Nginx for ${subdomain}...`);
-      await NginxService.createConfig(subdomain, port);
-    } catch (e) {
-      console.error(
-        `[DeployService] Failed to configure Nginx for ${subdomain}:`,
-        e,
+    // 7. Configure Nginx Proxy (Production Only)
+    if (process.env.NODE_ENV === "production") {
+      try {
+        console.log(`[DeployService] Configuring Nginx for ${subdomain}...`);
+        await NginxService.createConfig(subdomain, port);
+      } catch (e) {
+        console.error(
+          `[DeployService] Failed to configure Nginx for ${subdomain}:`,
+          e,
+        );
+        // We log but don't fail the whole deployment, as the app is running.
+        // User might need to fix domain issues manually.
+      }
+    } else {
+      console.log(
+        `[DeployService] Skipping Nginx config (not production). Subdomain: ${subdomain}`,
       );
-      // We log but don't fail the whole deployment, as the app is running.
-      // User might need to fix domain issues manually.
     }
 
     return { success: true };
@@ -115,7 +121,12 @@ export const DeployService = {
   /**
    * Deletes a project's files and stops its running process.
    */
-  async deleteProject(projectId: string, port?: number, subdomain?: string) {
+  async deleteProject(
+    projectId: string,
+    port?: number,
+    subdomain?: string,
+    buildIds?: string[],
+  ) {
     console.log(`[DeployService] Deleting project ${projectId}`);
 
     if (port) {
@@ -127,13 +138,32 @@ export const DeployService = {
       await rm(projectDir, { recursive: true, force: true });
     }
 
-    // Cleanup Nginx
-    if (subdomain) {
-      await NginxService.removeConfig(subdomain);
-    } else {
-      console.warn(
-        `[DeployService] No subdomain provided for project ${projectId}. Skipping Nginx cleanup.`,
+    // Cleanup Artifacts
+    if (buildIds && buildIds.length > 0) {
+      console.log(
+        `[DeployService] Cleaning up ${buildIds.length} artifacts for project ${projectId}`,
       );
+      for (const buildId of buildIds) {
+        const artifactPath = join(ARTIFACTS_DIR, `${buildId}.tar.gz`);
+        if (existsSync(artifactPath)) {
+          await unlink(artifactPath).catch((e) =>
+            console.warn(`Failed to delete artifact ${artifactPath}:`, e),
+          );
+        }
+      }
+    }
+
+    // Cleanup Nginx (Production Only)
+    if (process.env.NODE_ENV === "production") {
+      if (subdomain) {
+        await NginxService.removeConfig(subdomain);
+      } else {
+        console.warn(
+          `[DeployService] No subdomain provided for project ${projectId}. Skipping Nginx cleanup.`,
+        );
+      }
+    } else {
+      console.log(`[DeployService] Skipping Nginx cleanup (not production).`);
     }
 
     return { success: true };
@@ -153,16 +183,6 @@ export const DeployService = {
   },
 
   async extractArtifact(artifactPath: string, targetDir: string) {
-    // Check if already extracted? (Optimization opportunity, but risky if corrupted)
-    // For now, assume re-extraction is safer to ensure clean state,
-    // unless we want to strictly reuse.
-    // User asked "if node_modules exist... skip it".
-    // If we re-extract, we might overwrite node_modules if it was packaging it?
-    // Current setup: artifact likely DOES NOT contain node_modules.
-    // So extracting won't kill node_modules if they are already there?
-    // `tar` overwrites. If node_modules is NOT in tar, it stays?
-    // Yes.
-
     console.log(`[DeployService] Extracting to ${targetDir}`);
     const proc = Bun.spawn(["tar", "-xzf", artifactPath, "-C", targetDir]);
     await proc.exited;

@@ -9,7 +9,12 @@ export const DeploymentService = {
     });
 
     if (!project) throw new Error("Project not found");
+    // Ensure we don't proceed if port is missing
     if (!project.port) throw new Error("Project has no assigned port");
+
+    console.log(
+      `[DeploymentService] STARTING activation for ${project.name} (Build: ${buildId}) on Port: ${project.port}`,
+    );
 
     // Call Deploy Engine
     const deployEngineUrl =
@@ -26,10 +31,12 @@ export const DeploymentService = {
         buildId: buildId,
         port: project.port,
         appType: project.app_type,
-        subdomain: project.name
-          .toLowerCase()
-          .replace(/[^a-z0-9-]/g, "-")
-          .replace(/^-+|-+$/g, ""), // Slugify
+        subdomain:
+          project.domain?.split(".")[0] ||
+          project.name
+            .toLowerCase()
+            .replace(/[^a-z0-9-]/g, "-")
+            .replace(/^-+|-+$/g, ""), // Slugify
       }),
     });
 

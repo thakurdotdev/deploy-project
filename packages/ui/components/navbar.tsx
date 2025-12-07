@@ -1,14 +1,27 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { ModeToggle } from "@/components/theme-toggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, FolderGit2, Settings } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
+import { FolderGit2, LayoutDashboard, LogOut } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
 
   const routes = [
     {
@@ -18,16 +31,10 @@ export function Navbar() {
       active: pathname === "/",
     },
     {
-      href: "/projects",
-      label: "Projects",
+      href: "/projects/new",
+      label: "New Project",
       icon: FolderGit2,
-      active: pathname.startsWith("/projects"),
-    },
-    {
-      href: "/settings",
-      label: "Settings",
-      icon: Settings,
-      active: pathname === "/settings",
+      active: pathname === "/projects/new",
     },
   ];
 
@@ -36,30 +43,78 @@ export function Navbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link href="/" className="font-bold text-xl flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
-              V
-            </div>
-            Mini Vercel
+            <Image src="/logo.png" alt="Logo" width={30} height={30} />
+            Thakur Deploy
           </Link>
           <div className="hidden md:flex items-center gap-6">
-            {routes.map((route) => (
-              <Link
-                key={route.href}
-                href={route.href}
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary flex items-center gap-2",
-                  route.active ? "text-foreground" : "text-muted-foreground",
-                )}
-              >
-                <route.icon className="w-4 h-4" />
-                {route.label}
-              </Link>
-            ))}
+            {session &&
+              routes.map((route) => (
+                <Link
+                  key={route.href}
+                  href={route.href}
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-primary flex items-center gap-2",
+                    route.active ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  <route.icon className="w-4 h-4" />
+                  {route.label}
+                </Link>
+              ))}
           </div>
         </div>
         <div className="flex items-center gap-4">
           <ModeToggle />
-          <Button>Sign In</Button>
+          {session ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-8 w-8 rounded-full"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage
+                      src={session.user.image || ""}
+                      alt={session.user.name}
+                    />
+                    <AvatarFallback>
+                      {session.user.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {session.user.name}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {session.user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() =>
+                    authClient.signOut({
+                      fetchOptions: {
+                        credentials: "include",
+                        onSuccess: () => router.push("/login"),
+                      },
+                    })
+                  }
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild>
+              <Link href="/login">Sign In</Link>
+            </Button>
+          )}
         </div>
       </div>
     </nav>

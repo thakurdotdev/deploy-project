@@ -1,5 +1,6 @@
 import { Elysia, t } from "elysia";
 import { DeployService } from "./services/deploy-service";
+import { NginxService } from "./services/nginx-service";
 
 import { isPortAvailable } from "./utils/port";
 
@@ -64,9 +65,13 @@ const app = new Elysia()
     },
   )
   .post("/projects/:id/delete", async ({ params: { id }, body }) => {
-    const { port, subdomain } = body as { port?: number; subdomain?: string };
+    const { port, subdomain, buildIds } = body as {
+      port?: number;
+      subdomain?: string;
+      buildIds?: string[];
+    };
     try {
-      await DeployService.deleteProject(id, port, subdomain);
+      await DeployService.deleteProject(id, port, subdomain, buildIds);
       return { success: true };
     } catch (e: any) {
       return new Response(e.message, { status: 500 });
@@ -80,3 +85,10 @@ const app = new Elysia()
 console.log(
   `🚀 Deploy Engine is running at ${app.server?.hostname}:${app.server?.port}`,
 );
+
+// Initialize Nginx Default Config (Production Only)
+if (process.env.NODE_ENV === "production") {
+  NginxService.createDefaultConfig().catch((e) => {
+    console.error("Failed to initialize Nginx default config:", e);
+  });
+}
