@@ -102,7 +102,7 @@ export const NginxService = {
   async createDefaultConfig() {
     const content = `
 server {
-    listen 80;l
+    listen 80;
     server_name _ *.${BASE_DOMAIN};
     add_header Content-Type text/plain;
     return 404 "Unknown subdomain. No project deployed.\\n";
