@@ -1,5 +1,5 @@
 {
-  "name": "@mini-vercel/control-api",
+  "name": "@thakur-deploy/control-api",
   "version": "0.0.0",
   "scripts": {
     "dev": "bun run --watch src/index.ts",
