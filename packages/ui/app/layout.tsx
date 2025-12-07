@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Thakur Deploy',
-  description: 'Deploy your react and nextjs apps with ease',
+  description: 'Deploy your any frontend app with ease',
 };
 
 export default function RootLayout({
