@@ -1,37 +1,31 @@
-import { Elysia, t } from "elysia";
-import { DeployService } from "./services/deploy-service";
-import { NginxService } from "./services/nginx-service";
+import { Elysia, t } from 'elysia';
+import { DeployService } from './services/deploy-service';
+import { NginxService } from './services/nginx-service';
 
-import { isPortAvailable } from "./utils/port";
+import { isPortAvailable } from './utils/port';
 
 const app = new Elysia()
-  .post("/ports/check", async ({ body }) => {
+  .post('/ports/check', async ({ body }) => {
     const { port } = body as { port: number };
-    if (!port) return new Response("Port required", { status: 400 });
+    if (!port) return new Response('Port required', { status: 400 });
     const available = await isPortAvailable(port);
     return { available };
   })
-  .post("/artifacts/upload", async ({ query, request }) => {
+  .post('/artifacts/upload', async ({ query, request }) => {
     const buildId = query.buildId;
-    if (!buildId) return new Response("Missing buildId", { status: 400 });
+    if (!buildId) return new Response('Missing buildId', { status: 400 });
 
-    if (!request.body) return new Response("Missing body", { status: 400 });
+    if (!request.body) return new Response('Missing body', { status: 400 });
 
     return await DeployService.receiveArtifact(buildId, request.body);
   })
   .post(
-    "/activate",
+    '/activate',
     async ({ body }: { body: any }) => {
       const { projectId, buildId, port, appType, subdomain } = body;
 
       try {
-        await DeployService.activateDeployment(
-          projectId,
-          buildId,
-          port,
-          appType,
-          subdomain,
-        );
+        await DeployService.activateDeployment(projectId, buildId, port, appType, subdomain);
         return { success: true };
       } catch (e: any) {
         return new Response(e.message, { status: 500 });
@@ -42,13 +36,13 @@ const app = new Elysia()
         projectId: t.String(),
         buildId: t.String(),
         port: t.Number(),
-        appType: t.Union([t.Literal("nextjs"), t.Literal("vite")]),
+        appType: t.Union([t.Literal('nextjs'), t.Literal('vite')]),
         subdomain: t.String(),
       }),
     },
   )
   .post(
-    "/stop",
+    '/stop',
     async ({ body }: { body: any }) => {
       const { port } = body;
       try {
@@ -64,7 +58,7 @@ const app = new Elysia()
       }),
     },
   )
-  .post("/projects/:id/delete", async ({ params: { id }, body }) => {
+  .post('/projects/:id/delete', async ({ params: { id }, body }) => {
     const { port, subdomain, buildIds } = body as {
       port?: number;
       subdomain?: string;
@@ -77,18 +71,16 @@ const app = new Elysia()
       return new Response(e.message, { status: 500 });
     }
   })
-  .get("/*", ({ request }) => {
+  .get('/*', ({ request }) => {
     return DeployService.serveRequest(request);
   })
   .listen(4002);
 
-console.log(
-  `🚀 Deploy Engine is running at ${app.server?.hostname}:${app.server?.port}`,
-);
+console.log(`🚀 Deploy Engine is running at ${app.server?.hostname}:${app.server?.port}`);
 
 // Initialize Nginx Default Config (Production Only)
-if (process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV === 'production') {
   NginxService.createDefaultConfig().catch((e) => {
-    console.error("Failed to initialize Nginx default config:", e);
+    console.error('Failed to initialize Nginx default config:', e);
   });
 }

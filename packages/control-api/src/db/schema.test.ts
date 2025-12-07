@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll } from "vitest";
-import { fc } from "@fast-check/vitest";
-import { db } from "./index";
-import { projects, builds, deployments, environmentVariables } from "./schema";
-import { eq } from "drizzle-orm";
+import { describe, it, expect, beforeAll } from 'vitest';
+import { fc } from '@fast-check/vitest';
+import { db } from './index';
+import { projects, builds, deployments, environmentVariables } from './schema';
+import { eq } from 'drizzle-orm';
 
 // Mock database for property testing if no real DB is available
 // For now, we will assume these tests run in an environment where we can mock or use an in-memory DB
@@ -10,15 +10,15 @@ import { eq } from "drizzle-orm";
 // For the purpose of this task, we will write the test structure.
 // In a real scenario, we would spin up a test container or use a dedicated test DB.
 
-describe("Database Schema Properties", () => {
-  it("should persist project data correctly", async () => {
+describe('Database Schema Properties', () => {
+  it('should persist project data correctly', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.uuid(),
         fc.string(),
         fc.webUrl(),
         fc.string(),
-        fc.constantFrom("nextjs", "vite"),
+        fc.constantFrom('nextjs', 'vite'),
         fc.webUrl(),
         async (id, name, github_url, build_command, app_type, domain) => {
           // In a real test, we would insert and retrieve.
@@ -34,7 +34,7 @@ describe("Database Schema Properties", () => {
             updated_at: new Date(),
           };
           expect(project.id).toBeDefined();
-          expect(project.name).toBeTypeOf("string");
+          expect(project.name).toBeTypeOf('string');
         },
       ),
     );

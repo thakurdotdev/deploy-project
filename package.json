@@ -8,13 +8,26 @@
   "scripts": {
     "test": "bun test",
     "dev": "concurrently \"bun run --filter '@mini-vercel/control-api' dev\" \"bun run --filter '@mini-vercel/build-worker' dev\" \"bun run --filter '@mini-vercel/deploy-engine' dev\" \"bun run --filter 'ui' dev\" -c \"blue,yellow,magenta,cyan\" --kill-others",
-    "migrate": "bun run --filter '@mini-vercel/control-api' migrate"
+    "migrate": "bun run --filter '@mini-vercel/control-api' migrate",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
     "bun-types": "latest",
     "concurrently": "^9.2.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "fast-check": "^3.15.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.7.4",
     "typescript": "^5.0.0",
+    "typescript-eslint": "^8.48.1",
     "vitest": "^1.0.0"
   }
 }

@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
-import { ProjectCard } from "@/components/project-card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Plus, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+import { ProjectCard } from '@/components/project-card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Plus, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 export default function Home() {
   const [projects, setProjects] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     api.getProjects().then(setProjects).catch(console.error);

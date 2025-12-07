@@ -1,8 +1,8 @@
-import { Elysia, t } from "elysia";
-import { CloudflareService } from "../services/cloudflare-service";
+import { Elysia, t } from 'elysia';
+import { CloudflareService } from '../services/cloudflare-service';
 
-export const domainsRoutes = new Elysia({ prefix: "/domains" }).get(
-  "/check",
+export const domainsRoutes = new Elysia({ prefix: '/domains' }).get(
+  '/check',
   async ({ query }) => {
     const { subdomain } = query;
     try {
@@ -11,7 +11,7 @@ export const domainsRoutes = new Elysia({ prefix: "/domains" }).get(
     } catch (error: any) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: { 'Content-Type': 'application/json' },
       });
     }
   },

@@ -5,10 +5,10 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Github, Globe } from "lucide-react";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Github, Globe } from 'lucide-react';
 
 export function ProjectCard({ project }: { project: any }) {
   return (
@@ -30,10 +30,8 @@ export function ProjectCard({ project }: { project: any }) {
               {project.github_url}
             </a>
           </div>
-          {project.root_directory && project.root_directory !== "./" && (
-            <div className="text-sm text-muted-foreground">
-              Root: {project.root_directory}
-            </div>
+          {project.root_directory && project.root_directory !== './' && (
+            <div className="text-sm text-muted-foreground">Root: {project.root_directory}</div>
           )}
           {project.domain && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">

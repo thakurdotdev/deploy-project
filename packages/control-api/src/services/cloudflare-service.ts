@@ -1,6 +1,6 @@
 const CF_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 const CF_ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
-const BASE_DOMAIN = process.env.BASE_DOMAIN || "thakur.dev";
+const BASE_DOMAIN = process.env.BASE_DOMAIN || 'thakur.dev';
 
 export const CloudflareService = {
   /**
@@ -13,21 +13,19 @@ export const CloudflareService = {
     // 1. Basic Validation
     const s = subdomain.toLowerCase().trim();
     if (!/^[a-z0-9-]+$/.test(s)) {
-      throw new Error(
-        "Invalid subdomain format. Use letters, numbers, and hyphens.",
-      );
+      throw new Error('Invalid subdomain format. Use letters, numbers, and hyphens.');
     }
-    if (s.startsWith("-") || s.endsWith("-")) {
-      throw new Error("Subdomain cannot start or end with a hyphen.");
+    if (s.startsWith('-') || s.endsWith('-')) {
+      throw new Error('Subdomain cannot start or end with a hyphen.');
     }
 
     // Checking against local reserved words (optional, but good practice)
-    const RESERVED = ["www", "api", "admin", "mail", "ftp", "localhost"];
+    const RESERVED = ['www', 'api', 'admin', 'mail', 'ftp', 'localhost'];
     if (RESERVED.includes(s)) return false;
 
     if (!CF_API_TOKEN || !CF_ZONE_ID) {
       console.warn(
-        "Cloudflare credentials missing. Skipping actual API check (Assuming available).",
+        'Cloudflare credentials missing. Skipping actual API check (Assuming available).',
       );
       return true;
     }
@@ -40,14 +38,14 @@ export const CloudflareService = {
       const res = await fetch(url, {
         headers: {
           Authorization: `Bearer ${CF_API_TOKEN}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error("Cloudflare API Error:", errorText);
-        throw new Error("Failed to check domain availability with provider.");
+        console.error('Cloudflare API Error:', errorText);
+        throw new Error('Failed to check domain availability with provider.');
       }
 
       const data = (await res.json()) as { result: any[] };
@@ -55,7 +53,7 @@ export const CloudflareService = {
       // If result array is empty, no record exists -> Available
       return data.result.length === 0;
     } catch (error) {
-      console.error("Cloudflare Service Error:", error);
+      console.error('Cloudflare Service Error:', error);
       // Fallback: If we can't check, we might assume safely false to prevent conflicts?
       // Or throw to let user try again.
       throw error;

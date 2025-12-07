@@ -1,10 +1,10 @@
-import { existsSync, mkdirSync } from "fs";
-import { rm, unlink } from "fs/promises";
-import { join } from "path";
-import { NginxService } from "./nginx-service";
+import { existsSync, mkdirSync } from 'fs';
+import { rm, unlink } from 'fs/promises';
+import { join } from 'path';
+import { NginxService } from './nginx-service';
 
-const BASE_DIR = process.env.BASE_DIR || join(process.cwd(), "apps");
-const ARTIFACTS_DIR = join(BASE_DIR, "artifacts");
+const BASE_DIR = process.env.BASE_DIR || join(process.cwd(), 'apps');
+const ARTIFACTS_DIR = join(BASE_DIR, 'artifacts');
 
 // Ensure artifacts directory exists
 if (!existsSync(ARTIFACTS_DIR)) {
@@ -34,7 +34,7 @@ export const DeployService = {
    * Simple health check for the Deploy Engine itself.
    */
   serveRequest(_request: Request) {
-    return new Response("Deploy Engine Running", { status: 200 });
+    return new Response('Deploy Engine Running', { status: 200 });
   },
 
   /**
@@ -48,7 +48,7 @@ export const DeployService = {
     projectId: string,
     buildId: string,
     port: number,
-    appType: "nextjs" | "vite",
+    appType: 'nextjs' | 'vite',
     subdomain: string, // NEW: Subdomain required
   ) {
     console.log(
@@ -75,23 +75,15 @@ export const DeployService = {
     await this.killProjectProcess(projectId, port);
 
     // 6. Start Application
-    await this.startApplication(
-      paths.extractDir,
-      port,
-      appType,
-      paths.projectDir,
-    );
+    await this.startApplication(paths.extractDir, port, appType, paths.projectDir);
 
     // 7. Configure Nginx Proxy (Production Only)
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === 'production') {
       try {
         console.log(`[DeployService] Configuring Nginx for ${subdomain}...`);
         await NginxService.createConfig(subdomain, port);
       } catch (e) {
-        console.error(
-          `[DeployService] Failed to configure Nginx for ${subdomain}:`,
-          e,
-        );
+        console.error(`[DeployService] Failed to configure Nginx for ${subdomain}:`, e);
         // We log but don't fail the whole deployment, as the app is running.
         // User might need to fix domain issues manually.
       }
@@ -121,12 +113,7 @@ export const DeployService = {
   /**
    * Deletes a project's files and stops its running process.
    */
-  async deleteProject(
-    projectId: string,
-    port?: number,
-    subdomain?: string,
-    buildIds?: string[],
-  ) {
+  async deleteProject(projectId: string, port?: number, subdomain?: string, buildIds?: string[]) {
     console.log(`[DeployService] Deleting project ${projectId}`);
 
     if (port) {
@@ -154,7 +141,7 @@ export const DeployService = {
     }
 
     // Cleanup Nginx (Production Only)
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV === 'production') {
       if (subdomain) {
         await NginxService.removeConfig(subdomain);
       } else {
@@ -176,35 +163,35 @@ export const DeployService = {
     return {
       artifact: join(ARTIFACTS_DIR, `${buildId}.tar.gz`),
       projectDir,
-      buildDir: join(projectDir, "builds", buildId),
-      extractDir: join(projectDir, "builds", buildId, "extracted"),
-      currentLink: join(projectDir, "current"),
+      buildDir: join(projectDir, 'builds', buildId),
+      extractDir: join(projectDir, 'builds', buildId, 'extracted'),
+      currentLink: join(projectDir, 'current'),
     };
   },
 
   async extractArtifact(artifactPath: string, targetDir: string) {
     console.log(`[DeployService] Extracting to ${targetDir}`);
-    const proc = Bun.spawn(["tar", "-xzf", artifactPath, "-C", targetDir]);
+    const proc = Bun.spawn(['tar', '-xzf', artifactPath, '-C', targetDir]);
     await proc.exited;
-    if (proc.exitCode !== 0) throw new Error("Failed to extract artifact");
+    if (proc.exitCode !== 0) throw new Error('Failed to extract artifact');
   },
 
   async updateSymlink(projectDir: string, targetDir: string, buildId: string) {
-    const currentLink = join(projectDir, "current");
-    const idFile = join(projectDir, "current_build_id");
+    const currentLink = join(projectDir, 'current');
+    const idFile = join(projectDir, 'current_build_id');
 
     if (existsSync(currentLink)) await unlink(currentLink);
 
     await Bun.write(idFile, buildId);
 
-    const proc = Bun.spawn(["ln", "-sf", targetDir, currentLink]);
+    const proc = Bun.spawn(['ln', '-sf', targetDir, currentLink]);
     await proc.exited;
   },
 
   // NEW: PID-based kill
   async killProjectProcess(projectId: string, port: number) {
     const projectDir = join(BASE_DIR, projectId);
-    const pidFile = join(projectDir, "server.pid");
+    const pidFile = join(projectDir, 'server.pid');
 
     // 1. Try to kill by PID
     if (existsSync(pidFile)) {
@@ -212,12 +199,10 @@ export const DeployService = {
         const pidStr = await Bun.file(pidFile).text();
         const pid = parseInt(pidStr.trim(), 10);
         if (!isNaN(pid)) {
-          console.log(
-            `[DeployService] Found PID file for ${projectId}: ${pid}. Killing...`,
-          );
+          console.log(`[DeployService] Found PID file for ${projectId}: ${pid}. Killing...`);
           // Check if it's running? kill(0) checks existence
           process.kill(pid, 0); // throws if not found
-          process.kill(pid, "SIGKILL"); // Kill it
+          process.kill(pid, 'SIGKILL'); // Kill it
 
           // Wait a bit
           await new Promise((r) => setTimeout(r, 200));
@@ -233,18 +218,16 @@ export const DeployService = {
     await this.ensurePortFree(port);
   },
 
-  async killProcessOnPort(
-    port: number,
-  ): Promise<{ selfFound: boolean; killedCount: number }> {
+  async killProcessOnPort(port: number): Promise<{ selfFound: boolean; killedCount: number }> {
     try {
       console.log(`[DeployService] Finding PIDs on port ${port}...`);
 
       // Try lsof first
       let pids: string[] = [];
       try {
-        const proc = Bun.spawn(["lsof", "-t", `-i:${port}`, "-sTCP:LISTEN"]);
+        const proc = Bun.spawn(['lsof', '-t', `-i:${port}`, '-sTCP:LISTEN']);
         const output = await new Response(proc.stdout).text();
-        pids = output.trim().split("\n").filter(Boolean);
+        pids = output.trim().split('\n').filter(Boolean);
       } catch (e) {
         console.warn(`[DeployService] lsof failed, trying ss...`);
       }
@@ -253,14 +236,14 @@ export const DeployService = {
       if (pids.length === 0) {
         try {
           // ss -lptn 'sport = :PORT'
-          const proc = Bun.spawn(["ss", "-lptn", `sport = :${port}`]);
+          const proc = Bun.spawn(['ss', '-lptn', `sport = :${port}`]);
           const output = await new Response(proc.stdout).text();
           // Output format: State Recv-Q Send-Q Local Address:Port Peer Address:PortProcess
           // Example: LISTEN 0 128 *:3000 *:* users:(("bun",pid=12345,fd=12))
 
           const match = output.match(/pid=(\d+)/g);
           if (match) {
-            pids = match.map((m) => m.split("=")[1]);
+            pids = match.map((m) => m.split('=')[1]);
           }
         } catch (e) {
           console.warn(`[DeployService] ss failed as well.`);
@@ -276,11 +259,7 @@ export const DeployService = {
       pids = [...new Set(pids)];
 
       const myPid = process.pid.toString();
-      console.log(
-        `[DeployService] PIDs on port ${port}: ${pids.join(
-          ", ",
-        )} (My PID: ${myPid})`,
-      );
+      console.log(`[DeployService] PIDs on port ${port}: ${pids.join(', ')} (My PID: ${myPid})`);
 
       const targets = pids.filter((pid) => pid !== myPid);
       const selfFound = targets.length < pids.length;
@@ -294,16 +273,13 @@ export const DeployService = {
         return { selfFound, killedCount: 0 };
       }
 
-      console.log(`[DeployService] Killing PIDs: ${targets.join(", ")}`);
+      console.log(`[DeployService] Killing PIDs: ${targets.join(', ')}`);
       // Kill specific PIDs
-      const killProc = Bun.spawn(["kill", "-9", ...targets]);
+      const killProc = Bun.spawn(['kill', '-9', ...targets]);
       await killProc.exited;
       return { selfFound, killedCount: targets.length };
     } catch (e) {
-      console.warn(
-        `[DeployService] Warning: Failed to kill process on port ${port}`,
-        e,
-      );
+      console.warn(`[DeployService] Warning: Failed to kill process on port ${port}`, e);
       return { selfFound: false, killedCount: 0 };
     }
   },
@@ -329,7 +305,7 @@ export const DeployService = {
 
       // Check 1: lsof
       try {
-        const proc = Bun.spawn(["lsof", "-t", `-i:${port}`, "-sTCP:LISTEN"]);
+        const proc = Bun.spawn(['lsof', '-t', `-i:${port}`, '-sTCP:LISTEN']);
         const output = await new Response(proc.stdout).text();
         if (!output.trim()) isFree = true;
       } catch (e) {
@@ -356,15 +332,11 @@ export const DeployService = {
         return;
       }
 
-      console.log(
-        `[DeployService] Port ${port} is still in use. Retrying cleanup...`,
-      );
+      console.log(`[DeployService] Port ${port} is still in use. Retrying cleanup...`);
       // Force kill again just in case
       const retryResult = await this.killProcessOnPort(port);
       if (retryResult.selfFound && retryResult.killedCount === 0) {
-        throw new Error(
-          `Port ${port} is in use by the Deploy Engine itself! Cannot stop.`,
-        );
+        throw new Error(`Port ${port} is in use by the Deploy Engine itself! Cannot stop.`);
       }
 
       await new Promise((r) => setTimeout(r, 500));
@@ -377,7 +349,7 @@ export const DeployService = {
   async startApplication(
     cwd: string,
     port: number,
-    appType: "nextjs" | "vite",
+    appType: 'nextjs' | 'vite',
     projectDir: string, // Pass projectDir to write PID
   ) {
     let startCmd: string[];
@@ -385,56 +357,53 @@ export const DeployService = {
 
     // Detect Static Next.js (output: export)
     // If 'out' directory exists, we treat it as a static site
-    const staticNextPath = join(cwd, "out");
-    const isStaticNext = appType === "nextjs" && existsSync(staticNextPath);
+    const staticNextPath = join(cwd, 'out');
+    const isStaticNext = appType === 'nextjs' && existsSync(staticNextPath);
 
-    if (appType === "vite" || isStaticNext) {
+    if (appType === 'vite' || isStaticNext) {
       console.log(
-        `[DeployService] Detected Static App (${
-          isStaticNext ? "Next.js Export" : "Vite"
-        })`,
+        `[DeployService] Detected Static App (${isStaticNext ? 'Next.js Export' : 'Vite'})`,
       );
       isStatic = true;
-      const serverScript = join(process.cwd(), "src", "static-server.ts");
+      const serverScript = join(process.cwd(), 'src', 'static-server.ts');
       // Use 'out' for Next.js, 'dist' for Vite
-      const distDir = join(cwd, isStaticNext ? "out" : "dist");
-      startCmd = ["bun", "run", serverScript, distDir, port.toString()];
+      const distDir = join(cwd, isStaticNext ? 'out' : 'dist');
+      startCmd = ['bun', 'run', serverScript, distDir, port.toString()];
     } else {
       // Standard Next.js (SSR)
       console.log(`[DeployService] Detected SSR App (Next.js)`);
 
       // OPTIMIZATION: Skip install if node_modules exists
-      const nodeModulesPath = join(cwd, "node_modules");
+      const nodeModulesPath = join(cwd, 'node_modules');
       if (existsSync(nodeModulesPath)) {
         console.log(`[DeployService] node_modules found. Skipping install.`);
       } else {
         console.log(`[DeployService] Installing dependencies...`);
-        const installProc = Bun.spawn(["bun", "install", "--production"], {
+        const installProc = Bun.spawn(['bun', 'install', '--production'], {
           cwd,
-          stdout: "inherit",
-          stderr: "inherit",
+          stdout: 'inherit',
+          stderr: 'inherit',
         });
         await installProc.exited;
-        if (installProc.exitCode !== 0)
-          throw new Error("Dependency install failed");
+        if (installProc.exitCode !== 0) throw new Error('Dependency install failed');
       }
 
-      startCmd = ["bun", "run", "start", "--", "--port", port.toString()];
+      startCmd = ['bun', 'run', 'start', '--', '--port', port.toString()];
     }
 
     // Spawn detached process
     console.log(`[DeployService] Spawning process on port ${port} (detached)`);
 
     const appProc = Bun.spawn(startCmd, {
-      cwd: appType === "nextjs" && !isStatic ? cwd : process.cwd(),
-      stdout: "inherit",
-      stderr: "inherit",
+      cwd: appType === 'nextjs' && !isStatic ? cwd : process.cwd(),
+      stdout: 'inherit',
+      stderr: 'inherit',
       detached: true, // Native Bun detachment
       env: { ...process.env, PORT: port.toString() },
     });
 
     // Write PID file
-    const pidFile = join(projectDir, "server.pid");
+    const pidFile = join(projectDir, 'server.pid');
     await Bun.write(pidFile, appProc.pid.toString());
     console.log(`[DeployService] PID ${appProc.pid} written to ${pidFile}`);
 
@@ -456,10 +425,12 @@ export const DeployService = {
           console.log(`[DeployService] Health check passed.`);
           return;
         }
-      } catch {}
+      } catch {
+        // Health check failed, retry
+      }
       await new Promise((r) => setTimeout(r, 500));
       retries--;
     }
-    throw new Error("Health check failed: Application did not start in time.");
+    throw new Error('Health check failed: Application did not start in time.');
   },
 };

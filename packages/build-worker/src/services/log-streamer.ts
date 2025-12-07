@@ -12,7 +12,7 @@ export const LogStreamer = {
   async stream(buildId: string, projectId: string, message: string) {
     if (!buffers[buildId]) {
       buffers[buildId] = {
-        logs: "",
+        logs: '',
         timeout: null,
       };
     }
@@ -42,24 +42,23 @@ export const LogStreamer = {
     }
 
     const logsToSend = buffer.logs;
-    buffer.logs = ""; // Clear buffer immediately
+    buffer.logs = ''; // Clear buffer immediately
 
     // console.log(`[LogStreamer] Flushing ${logsToSend.length} chars for ${buildId}`);
 
-    const controlApiUrl =
-      process.env.CONTROL_API_URL || "http://localhost:4000";
+    const controlApiUrl = process.env.CONTROL_API_URL || 'http://localhost:4000';
 
     try {
       const res = await fetch(`${controlApiUrl}/builds/${buildId}/logs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ logs: logsToSend }),
       });
       if (!res.ok) {
         console.error(`[LogStreamer] Failed to flush: ${res.statusText}`);
       }
     } catch (error) {
-      console.error("[LogStreamer] Failed to stream logs:", error);
+      console.error('[LogStreamer] Failed to stream logs:', error);
     }
   },
 

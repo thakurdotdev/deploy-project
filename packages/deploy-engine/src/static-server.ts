@@ -1,9 +1,9 @@
-import { join } from "path";
+import { join } from 'path';
 
 const [dir, portStr] = process.argv.slice(2);
 
 if (!dir || !portStr) {
-  console.error("Usage: bun static-server.ts <directory> <port>");
+  console.error('Usage: bun static-server.ts <directory> <port>');
   process.exit(1);
 }
 
@@ -19,12 +19,12 @@ Bun.serve({
     let filePath = url.pathname;
 
     // Default to index.html for root
-    if (filePath === "/" || filePath === "") {
-      filePath = "/index.html";
+    if (filePath === '/' || filePath === '') {
+      filePath = '/index.html';
     }
 
-    let fullPath = join(baseDir, filePath);
-    let file = Bun.file(fullPath);
+    const fullPath = join(baseDir, filePath);
+    const file = Bun.file(fullPath);
 
     // Try to serve file
     if (await file.exists()) {
@@ -35,14 +35,14 @@ Bun.serve({
     // Simple heuristic: if it doesn't have an extension, try index.html?
     // Or simpler: Just Always try index.html if 404?
     // Standard SPA fallback:
-    if (!filePath.startsWith("/api") && !filePath.includes(".")) {
+    if (!filePath.startsWith('/api') && !filePath.includes('.')) {
       // Try index.html
-      const index = Bun.file(join(baseDir, "index.html"));
+      const index = Bun.file(join(baseDir, 'index.html'));
       if (await index.exists()) {
         return new Response(index);
       }
     }
 
-    return new Response("Not Found", { status: 404 });
+    return new Response('Not Found', { status: 404 });
   },
 });

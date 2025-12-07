@@ -1,22 +1,22 @@
-import { existsSync } from "fs";
-import { unlink, symlink } from "fs/promises";
-import { join } from "path";
+import { existsSync } from 'fs';
+import { unlink, symlink } from 'fs/promises';
+import { join } from 'path';
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN || "thakur.dev";
-const AVAILABLE_DIR = "/etc/nginx/platform-sites";
-const ENABLED_DIR = "/etc/nginx/platform-sites";
+const BASE_DOMAIN = process.env.BASE_DOMAIN || 'thakur.dev';
+const AVAILABLE_DIR = '/etc/nginx/platform-sites';
+const ENABLED_DIR = '/etc/nginx/platform-sites';
 
 const RESERVED = [
-  "www",
-  "api",
-  "admin",
-  "dashboard",
-  "deploy",
-  "git",
-  "db",
-  "mail",
-  "staging",
-  "dev",
+  'www',
+  'api',
+  'admin',
+  'dashboard',
+  'deploy',
+  'git',
+  'db',
+  'mail',
+  'staging',
+  'dev',
 ];
 
 export const NginxService = {
@@ -25,7 +25,7 @@ export const NginxService = {
     const s = sub.toLowerCase().trim();
     if (RESERVED.includes(s)) return false;
     if (!/^[a-z0-9-]+$/.test(s)) return false;
-    if (s.startsWith("-") || s.endsWith("-")) return false;
+    if (s.startsWith('-') || s.endsWith('-')) return false;
     return true;
   },
 
@@ -120,7 +120,7 @@ server {
 }
   `;
 
-    const file = join(AVAILABLE_DIR, "00-default.conf");
+    const file = join(AVAILABLE_DIR, '00-default.conf');
 
     await Bun.write(file, content);
 
@@ -128,11 +128,11 @@ server {
   },
 
   async reload() {
-    const proc = Bun.spawn(["sudo", "systemctl", "reload", "nginx"]);
+    const proc = Bun.spawn(['sudo', 'systemctl', 'reload', 'nginx']);
     await proc.exited;
 
     if (proc.exitCode !== 0) {
-      throw new Error("Failed to reload nginx");
+      throw new Error('Failed to reload nginx');
     }
   },
 };

@@ -1,6 +1,6 @@
-import simpleGit from "simple-git";
-import { existsSync, mkdirSync, rmSync } from "fs";
-import { join } from "path";
+import simpleGit from 'simple-git';
+import { existsSync, mkdirSync, rmSync } from 'fs';
+import { join } from 'path';
 
 export const GitService = {
   async clone(repoUrl: string, targetDir: string) {

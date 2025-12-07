@@ -1,12 +1,12 @@
-import { db } from "../db";
-import { builds, deployments } from "../db/schema";
-import { eq, desc, and } from "drizzle-orm";
-import { DeploymentService } from "./deployment-service";
+import { db } from '../db';
+import { builds, deployments } from '../db/schema';
+import { eq, desc, and } from 'drizzle-orm';
+import { DeploymentService } from './deployment-service';
 
 export const BuildService = {
   async create(data: {
     project_id: string;
-    status: "pending" | "building" | "success" | "failed";
+    status: 'pending' | 'building' | 'success' | 'failed';
   }) {
     const result = await db.insert(builds).values(data).returning();
     return result[0];
@@ -27,14 +27,14 @@ export const BuildService = {
 
   async updateStatus(
     id: string,
-    status: "pending" | "building" | "success" | "failed",
+    status: 'pending' | 'building' | 'success' | 'failed',
     logs?: string,
     artifactId?: string,
   ) {
     const data: any = { status, updated_at: new Date() };
     if (logs) data.logs = logs;
     if (artifactId) data.artifact_id = artifactId;
-    if (status === "success" || status === "failed") {
+    if (status === 'success' || status === 'failed') {
       data.completed_at = new Date();
     }
 
@@ -43,22 +43,18 @@ export const BuildService = {
       .set({
         ...data, // Keep existing data fields
         status: status,
-        completed_at:
-          status === "success" || status === "failed" ? new Date() : null,
+        completed_at: status === 'success' || status === 'failed' ? new Date() : null,
       })
       .where(eq(builds.id, id))
       .returning();
 
     // Auto-activate if it's the first successful build
-    if (status === "success" && updated) {
+    if (status === 'success' && updated) {
       const activeDeployments = await db
         .select()
         .from(deployments)
         .where(
-          and(
-            eq(deployments.project_id, updated.project_id),
-            eq(deployments.status, "active"),
-          ),
+          and(eq(deployments.project_id, updated.project_id), eq(deployments.status, 'active')),
         );
 
       if (activeDeployments.length === 0) {

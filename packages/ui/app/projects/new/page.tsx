@@ -1,64 +1,58 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { api } from "@/lib/api";
-import { Check, Eye, EyeOff, Loader2, Plus, Trash2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+} from '@/components/ui/select';
+import { api } from '@/lib/api';
+import { Check, Eye, EyeOff, Loader2, Plus, Trash2, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function NewProject() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
-    github_url: "",
-    build_command: "npm run build",
-    app_type: "nextjs",
-    root_directory: "",
-    domain: "",
+    name: '',
+    github_url: '',
+    build_command: 'npm run build',
+    app_type: 'nextjs',
+    root_directory: '',
+    domain: '',
   });
 
   const [envVars, setEnvVars] = useState<{ key: string; value: string }[]>([]);
   const [showValues, setShowValues] = useState(false);
 
   const [subdomainStatus, setSubdomainStatus] = useState<
-    "idle" | "loading" | "available" | "unavailable"
-  >("idle");
-  const [subdomainError, setSubdomainError] = useState("");
+    'idle' | 'loading' | 'available' | 'unavailable'
+  >('idle');
+  const [subdomainError, setSubdomainError] = useState('');
 
   const checkSubdomain = async () => {
     if (!formData.domain) return;
-    setSubdomainStatus("loading");
-    setSubdomainError("");
+    setSubdomainStatus('loading');
+    setSubdomainError('');
     try {
       const { available } = await api.checkDomainAvailability(formData.domain);
-      setSubdomainStatus(available ? "available" : "unavailable");
+      setSubdomainStatus(available ? 'available' : 'unavailable');
     } catch (e: any) {
       console.error(e);
-      setSubdomainStatus("idle"); // Reset to idle to allow retry
-      setSubdomainError(e.message || "Failed to check");
+      setSubdomainStatus('idle'); // Reset to idle to allow retry
+      setSubdomainError(e.message || 'Failed to check');
     }
   };
 
   const addEnvVar = () => {
-    setEnvVars([...envVars, { key: "", value: "" }]);
+    setEnvVars([...envVars, { key: '', value: '' }]);
   };
 
   const removeEnvVar = (index: number) => {
@@ -67,29 +61,25 @@ export default function NewProject() {
     setEnvVars(newVars);
   };
 
-  const updateEnvVar = (
-    index: number,
-    field: "key" | "value",
-    value: string,
-  ) => {
+  const updateEnvVar = (index: number, field: 'key' | 'value', value: string) => {
     const newVars = [...envVars];
     newVars[index][field] = value;
     setEnvVars(newVars);
   };
 
   const handlePaste = (e: React.ClipboardEvent, index: number) => {
-    const text = e.clipboardData.getData("text");
+    const text = e.clipboardData.getData('text');
     // Check if it looks like bulk env vars (multiline or contains =)
-    if (text.includes("\n") || text.includes("=")) {
+    if (text.includes('\n') || text.includes('=')) {
       e.preventDefault();
       const newVars: { key: string; value: string }[] = [];
 
       // Parse pasted text
-      text.split("\n").forEach((line) => {
+      text.split('\n').forEach((line) => {
         const trimmed = line.trim();
 
         // Skip commented or empty lines
-        if (!trimmed || trimmed.startsWith("#")) return;
+        if (!trimmed || trimmed.startsWith('#')) return;
 
         const match = trimmed.match(/^([^=]+)=(.*)$/);
         if (match) {
@@ -100,8 +90,7 @@ export default function NewProject() {
       if (newVars.length > 0) {
         // If pasting into an empty row, replace it. Otherwise append.
         const currentVars = [...envVars];
-        const isCurrentRowEmpty =
-          !currentVars[index].key && !currentVars[index].value;
+        const isCurrentRowEmpty = !currentVars[index].key && !currentVars[index].value;
 
         if (isCurrentRowEmpty) {
           currentVars.splice(index, 1, ...newVars);
@@ -117,20 +106,23 @@ export default function NewProject() {
     e.preventDefault();
     setLoading(true);
     try {
-      const envVarsRecord = envVars.reduce((acc, curr) => {
-        if (curr.key) acc[curr.key] = curr.value;
-        return acc;
-      }, {} as Record<string, string>);
+      const envVarsRecord = envVars.reduce(
+        (acc, curr) => {
+          if (curr.key) acc[curr.key] = curr.value;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
 
       const project = await api.createProject({
         ...formData,
-        domain: formData.domain ? `${formData.domain}.thakur.dev` : "",
+        domain: formData.domain ? `${formData.domain}.thakur.dev` : '',
         env_vars: envVarsRecord,
       });
       router.push(`/projects/${project.id}`);
     } catch (error) {
       console.error(error);
-      alert("Failed to create project");
+      alert('Failed to create project');
     } finally {
       setLoading(false);
     }
@@ -139,12 +131,8 @@ export default function NewProject() {
   return (
     <div className="container mx-auto py-10 max-w-4xl space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Create New Project
-        </h1>
-        <p className="text-muted-foreground">
-          Deploy your GitHub repository with a few clicks.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Create New Project</h1>
+        <p className="text-muted-foreground">Deploy your GitHub repository with a few clicks.</p>
       </div>
 
       <form className="space-y-8">
@@ -153,9 +141,7 @@ export default function NewProject() {
           <Card className="h-fit">
             <CardHeader>
               <CardTitle>Project Details</CardTitle>
-              <CardDescription>
-                Configure your project source and build settings.
-              </CardDescription>
+              <CardDescription>Configure your project source and build settings.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -164,9 +150,7 @@ export default function NewProject() {
                   id="name"
                   placeholder="my-awesome-app"
                   value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
@@ -177,9 +161,7 @@ export default function NewProject() {
                   id="github_url"
                   placeholder="https://github.com/user/repo"
                   value={formData.github_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, github_url: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
                   required
                 />
               </div>
@@ -188,9 +170,7 @@ export default function NewProject() {
                 <Label htmlFor="app_type">Framework Preset</Label>
                 <Select
                   value={formData.app_type}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, app_type: value })
-                  }
+                  onValueChange={(value) => setFormData({ ...formData, app_type: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select framework" />
@@ -208,9 +188,7 @@ export default function NewProject() {
                   id="root_directory"
                   placeholder="./"
                   value={formData.root_directory}
-                  onChange={(e) =>
-                    setFormData({ ...formData, root_directory: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, root_directory: e.target.value })}
                 />
               </div>
 
@@ -220,9 +198,7 @@ export default function NewProject() {
                   id="build_command"
                   placeholder="npm run build"
                   value={formData.build_command}
-                  onChange={(e) =>
-                    setFormData({ ...formData, build_command: e.target.value })
-                  }
+                  onChange={(e) => setFormData({ ...formData, build_command: e.target.value })}
                   required
                 />
               </div>
@@ -237,42 +213,38 @@ export default function NewProject() {
                       value={formData.domain}
                       onChange={(e) => {
                         setFormData({ ...formData, domain: e.target.value });
-                        setSubdomainStatus("idle");
-                        setSubdomainError("");
+                        setSubdomainStatus('idle');
+                        setSubdomainError('');
                       }}
                       className="text-right"
                     />
-                    <span className="text-muted-foreground whitespace-nowrap">
-                      .thakur.dev
-                    </span>
+                    <span className="text-muted-foreground whitespace-nowrap">.thakur.dev</span>
                   </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={checkSubdomain}
-                    disabled={!formData.domain || subdomainStatus === "loading"}
+                    disabled={!formData.domain || subdomainStatus === 'loading'}
                   >
-                    {subdomainStatus === "loading" ? (
+                    {subdomainStatus === 'loading' ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      "Check"
+                      'Check'
                     )}
                   </Button>
                 </div>
-                {subdomainStatus === "available" && (
+                {subdomainStatus === 'available' && (
                   <p className="text-sm text-green-500 flex items-center gap-1">
                     <Check className="h-3 w-3" /> Available
                   </p>
                 )}
-                {subdomainStatus === "unavailable" && (
+                {subdomainStatus === 'unavailable' && (
                   <p className="text-sm text-destructive flex items-center gap-1">
                     <X className="h-3 w-3" /> Domain is taken
                   </p>
                 )}
-                {subdomainError && (
-                  <p className="text-sm text-destructive">{subdomainError}</p>
-                )}
+                {subdomainError && <p className="text-sm text-destructive">{subdomainError}</p>}
               </div>
             </CardContent>
           </Card>
@@ -297,11 +269,7 @@ export default function NewProject() {
                       className="h-6 w-6"
                       onClick={() => setShowValues(!showValues)}
                     >
-                      {showValues ? (
-                        <EyeOff className="w-3 h-3" />
-                      ) : (
-                        <Eye className="w-3 h-3" />
-                      )}
+                      {showValues ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                     </Button>
                   </div>
                   <Button
@@ -321,21 +289,17 @@ export default function NewProject() {
                       <Input
                         placeholder="KEY"
                         value={env.key}
-                        onChange={(e) =>
-                          updateEnvVar(index, "key", e.target.value)
-                        }
+                        onChange={(e) => updateEnvVar(index, 'key', e.target.value)}
                         onPaste={(e) => handlePaste(e, index)}
                         className="font-mono text-xs"
                       />
                       <Input
                         placeholder="VALUE"
                         value={env.value}
-                        onChange={(e) =>
-                          updateEnvVar(index, "value", e.target.value)
-                        }
+                        onChange={(e) => updateEnvVar(index, 'value', e.target.value)}
                         onPaste={(e) => handlePaste(e, index)}
                         className="font-mono text-xs"
-                        type={showValues ? "text" : "password"}
+                        type={showValues ? 'text' : 'password'}
                       />
                       <Button
                         type="button"
@@ -361,13 +325,13 @@ export default function NewProject() {
                     <textarea
                       className="absolute opacity-0 w-0 h-0"
                       onPaste={(e) => {
-                        const text = e.clipboardData.getData("text");
+                        const text = e.clipboardData.getData('text');
                         const newVars: { key: string; value: string }[] = [];
-                        text.split("\n").forEach((line) => {
+                        text.split('\n').forEach((line) => {
                           const trimmed = line.trim();
 
                           // Skip commented or empty lines
-                          if (!trimmed || trimmed.startsWith("#")) return;
+                          if (!trimmed || trimmed.startsWith('#')) return;
 
                           const match = trimmed.match(/^([^=]+)=(.*)$/);
                           if (match) {
@@ -394,7 +358,7 @@ export default function NewProject() {
             type="button"
             variant="outline"
             disabled={loading}
-            onClick={() => router.push("/")}
+            onClick={() => router.push('/')}
           >
             Cancel
           </Button>

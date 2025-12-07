@@ -1,27 +1,24 @@
-import { Elysia } from "elysia";
-import { Worker } from "bullmq";
-import IORedis from "ioredis";
-import { Builder } from "./services/builder";
+import { Elysia } from 'elysia';
+import { Worker } from 'bullmq';
+import IORedis from 'ioredis';
+import { Builder } from './services/builder';
 
-const connection = new IORedis(
-  process.env.REDIS_URL || "redis://localhost:6379",
-  {
-    maxRetriesPerRequest: null,
-  },
-);
-
-connection.on("connect", () => {
-  console.log("✅ Connected to Redis");
+const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
+  maxRetriesPerRequest: null,
 });
 
-connection.on("error", (err) => {
-  console.error("❌ Redis connection error:", err);
+connection.on('connect', () => {
+  console.log('✅ Connected to Redis');
 });
 
-console.log("🚀 Starting Build Worker...");
+connection.on('error', (err) => {
+  console.error('❌ Redis connection error:', err);
+});
+
+console.log('🚀 Starting Build Worker...');
 
 const worker = new Worker(
-  "build-queue",
+  'build-queue',
   async (job) => {
     console.log(`Processing job ${job.id}:`, job.data.build_id);
     try {
@@ -41,28 +38,26 @@ const worker = new Worker(
   },
 );
 
-worker.on("completed", (job) => {
+worker.on('completed', (job) => {
   console.log(`Job ${job.id} has completed!`);
 });
 
-worker.on("failed", (job, err) => {
+worker.on('failed', (job, err) => {
   console.log(`Job ${job?.id} has failed with ${err.message}`);
 });
 
 // Keep Elysia for health checks
-const app = new Elysia().get("/", () => "Build Worker is running").listen(4001);
+const app = new Elysia().get('/', () => 'Build Worker is running').listen(4001);
 
-console.log(
-  `👷 Build Worker is running at ${app.server?.hostname}:${app.server?.port}`,
-);
+console.log(`👷 Build Worker is running at ${app.server?.hostname}:${app.server?.port}`);
 
 const gracefulShutdown = async (signal: string) => {
   console.log(`Received ${signal}, closing worker...`);
   await worker.close();
   await connection.quit();
-  console.log("Worker closed");
+  console.log('Worker closed');
   process.exit(0);
 };
 
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));

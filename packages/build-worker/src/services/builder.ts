@@ -1,9 +1,9 @@
-import { GitService } from "./git-service";
-import { LogStreamer } from "./log-streamer";
-import { ArtifactService } from "./artifact-service";
-import { join } from "path";
-import { spawn } from "child_process";
-import { rm } from "fs/promises";
+import { GitService } from './git-service';
+import { LogStreamer } from './log-streamer';
+import { ArtifactService } from './artifact-service';
+import { join } from 'path';
+import { spawn } from 'child_process';
+import { rm } from 'fs/promises';
 
 interface BuildJob {
   build_id: string;
@@ -11,31 +11,30 @@ interface BuildJob {
   github_url: string;
   build_command: string;
   root_directory: string;
-  app_type: "nextjs" | "vite";
+  app_type: 'nextjs' | 'vite';
   env_vars: Record<string, string>;
 }
 
 export const Builder = {
   async execute(job: BuildJob) {
     console.log(`[Builder] Starting execution for build ${job.build_id}`);
-    const workDir = join(process.cwd(), "workspace", job.build_id);
-    const controlApiUrl =
-      process.env.CONTROL_API_URL || "http://localhost:4000";
+    const workDir = join(process.cwd(), 'workspace', job.build_id);
+    const controlApiUrl = process.env.CONTROL_API_URL || 'http://localhost:4000';
 
-    const updateStatus = async (status: "building" | "success" | "failed") => {
+    const updateStatus = async (status: 'building' | 'success' | 'failed') => {
       try {
         await fetch(`${controlApiUrl}/builds/${job.build_id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ status }),
         });
       } catch (error) {
-        console.error("Failed to update build status:", error);
+        console.error('Failed to update build status:', error);
       }
     };
 
     try {
-      await updateStatus("building");
+      await updateStatus('building');
 
       // 1. Clone
       await LogStreamer.stream(
@@ -43,34 +42,16 @@ export const Builder = {
         job.project_id,
         `Starting build for ${job.build_id}\n`,
       );
-      await LogStreamer.stream(
-        job.build_id,
-        job.project_id,
-        "Cloning repository...\n",
-      );
+      await LogStreamer.stream(job.build_id, job.project_id, 'Cloning repository...\n');
       await GitService.clone(job.github_url, workDir);
 
       // 2. Install
-      await LogStreamer.stream(
-        job.build_id,
-        job.project_id,
-        "Installing dependencies...\n",
-      );
+      await LogStreamer.stream(job.build_id, job.project_id, 'Installing dependencies...\n');
       const projectDir = join(workDir, job.root_directory);
-      await this.runCommand(
-        "bun install",
-        projectDir,
-        job.build_id,
-        job.project_id,
-        job.env_vars,
-      );
+      await this.runCommand('bun install', projectDir, job.build_id, job.project_id, job.env_vars);
 
       // 3. Build
-      await LogStreamer.stream(
-        job.build_id,
-        job.project_id,
-        "Building project...\n",
-      );
+      await LogStreamer.stream(job.build_id, job.project_id, 'Building project...\n');
       await this.runCommand(
         job.build_command,
         projectDir,
@@ -79,42 +60,22 @@ export const Builder = {
         job.env_vars,
       );
 
+      await LogStreamer.stream(job.build_id, job.project_id, 'Build completed successfully!\n');
+      await LogStreamer.stream(job.build_id, job.project_id, 'Creating artifact package...\n');
       await LogStreamer.stream(
         job.build_id,
         job.project_id,
-        "Build completed successfully!\n",
-      );
-      await LogStreamer.stream(
-        job.build_id,
-        job.project_id,
-        "Creating artifact package...\n",
-      );
-      await LogStreamer.stream(
-        job.build_id,
-        job.project_id,
-        "Streaming artifact to Deploy Engine...\n",
+        'Streaming artifact to Deploy Engine...\n',
       );
 
-      await ArtifactService.streamArtifact(
-        job.build_id,
-        projectDir,
-        job.app_type,
-      );
+      await ArtifactService.streamArtifact(job.build_id, projectDir, job.app_type);
 
-      await LogStreamer.stream(
-        job.build_id,
-        job.project_id,
-        "Artifact uploaded successfully!\n",
-      );
+      await LogStreamer.stream(job.build_id, job.project_id, 'Artifact uploaded successfully!\n');
 
-      await updateStatus("success");
+      await updateStatus('success');
     } catch (error: any) {
-      await LogStreamer.stream(
-        job.build_id,
-        job.project_id,
-        `Build failed: ${error.message}\n`,
-      );
-      await updateStatus("failed");
+      await LogStreamer.stream(job.build_id, job.project_id, `Build failed: ${error.message}\n`);
+      await updateStatus('failed');
       throw error;
     } finally {
       await LogStreamer.ensureFlushed(job.build_id);
@@ -135,22 +96,22 @@ export const Builder = {
     envVars: Record<string, string> = {},
   ) {
     return new Promise<void>((resolve, reject) => {
-      const [cmd, ...args] = command.split(" ");
+      const [cmd, ...args] = command.split(' ');
       const child = spawn(cmd, args, {
         cwd,
         shell: true,
         env: { ...process.env, ...envVars },
       });
 
-      child.stdout.on("data", (data) => {
+      child.stdout.on('data', (data) => {
         LogStreamer.stream(buildId, projectId, data.toString());
       });
 
-      child.stderr.on("data", (data) => {
+      child.stderr.on('data', (data) => {
         LogStreamer.stream(buildId, projectId, data.toString());
       });
 
-      child.on("close", (code) => {
+      child.on('close', (code) => {
         if (code === 0) {
           resolve();
         } else {
@@ -158,7 +119,7 @@ export const Builder = {
         }
       });
 
-      child.on("error", (err) => {
+      child.on('error', (err) => {
         reject(err);
       });
     });

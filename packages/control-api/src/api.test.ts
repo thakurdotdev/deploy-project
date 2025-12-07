@@ -1,25 +1,25 @@
-import { describe, it, expect } from "vitest";
-import { fc } from "@fast-check/vitest";
-import { ProjectService } from "./services/project-service";
-import { BuildService } from "./services/build-service";
-import { JobQueue } from "./queue";
+import { describe, it, expect } from 'vitest';
+import { fc } from '@fast-check/vitest';
+import { ProjectService } from './services/project-service';
+import { BuildService } from './services/build-service';
+import { JobQueue } from './queue';
 
 // Mock DB interactions for property tests
 // In a real scenario, we'd mock the `db` module.
 // For now, we'll just test the service logic structure and types.
 
-describe("Control API Properties", () => {
-  it("should handle project creation properties", async () => {
+describe('Control API Properties', () => {
+  it('should handle project creation properties', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.string(),
         fc.webUrl(),
         fc.string(),
-        fc.constantFrom("nextjs", "vite"),
+        fc.constantFrom('nextjs', 'vite'),
         async (name, github_url, build_command, app_type) => {
           // Mock DB insert
           const mockProject = {
-            id: "mock-id",
+            id: 'mock-id',
             name,
             github_url,
             build_command,
@@ -39,14 +39,14 @@ describe("Control API Properties", () => {
     );
   });
 
-  it("should handle build initiation properties", async () => {
+  it('should handle build initiation properties', async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.uuid(),
-        fc.constantFrom("pending", "building", "success", "failed"),
+        fc.constantFrom('pending', 'building', 'success', 'failed'),
         async (project_id, status) => {
           const mockBuild = {
-            id: "mock-build-id",
+            id: 'mock-build-id',
             project_id,
             status,
             created_at: new Date(),

@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { authClient } from "@/lib/auth-client";
-import { Loader2 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { authClient } from '@/lib/auth-client';
+import { Loader2 } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
 
-  const isPublicRoute = pathname === "/login";
+  const isPublicRoute = pathname === '/login';
 
   useEffect(() => {
     if (!isPublicRoute && !isPending && !session) {
-      router.push("/login");
+      router.push('/login');
     }
   }, [session, isPending, router, isPublicRoute]);
 

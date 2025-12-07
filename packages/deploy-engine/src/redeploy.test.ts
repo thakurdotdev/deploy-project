@@ -1,20 +1,20 @@
-import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { DeployService } from "./services/deploy-service";
-import { join } from "path";
-import { existsSync, mkdirSync, writeFileSync } from "fs";
-import { bunExe } from "./test-utils"; // Assuming hypothetical util, or just use "bun"
+import { describe, expect, test, beforeAll, afterAll } from 'bun:test';
+import { DeployService } from './services/deploy-service';
+import { join } from 'path';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { bunExe } from './test-utils'; // Assuming hypothetical util, or just use "bun"
 
 // Mock constants/env if needed or just rely on the service using process.cwd()
 // We might need to adjust BASE_DIR env var for safety
-process.env.BASE_DIR = join(process.cwd(), "test-workspace");
+process.env.BASE_DIR = join(process.cwd(), 'test-workspace');
 const TEST_PORT = 9001;
 
-describe("Redeploy Flow", () => {
-  const projectId = "test-redeploy-project";
-  const buildId1 = "build-1";
-  const buildId2 = "build-2";
+describe('Redeploy Flow', () => {
+  const projectId = 'test-redeploy-project';
+  const buildId1 = 'build-1';
+  const buildId2 = 'build-2';
 
-  test("Should start first deployment cleanly", async () => {
+  test('Should start first deployment cleanly', async () => {
     // Setup artifact mock
     // We'll just manually create the 'extracted' dir to skip artifact logic for now
     // or mock the extract method.
@@ -38,14 +38,14 @@ describe("Redeploy Flow", () => {
     // It runs "bun run start" or "static-server".
     // Let's create a package.json with a start script.
     writeFileSync(
-      join(paths1.extractDir, "package.json"),
+      join(paths1.extractDir, 'package.json'),
       JSON.stringify({
         scripts: {
-          start: "bun run server.ts",
+          start: 'bun run server.ts',
         },
       }),
     );
-    writeFileSync(join(paths1.extractDir, "server.ts"), script);
+    writeFileSync(join(paths1.extractDir, 'server.ts'), script);
 
     // Act
     // We skip extract/symlink steps and call startApplication directly or verify ensurePortFree works.
@@ -55,20 +55,15 @@ describe("Redeploy Flow", () => {
     // Let's just monitor 'killProcessOnPort' and 'startApplication'.
 
     // Let's call startApplication directly to simulate "Start V1"
-    await DeployService.startApplication(
-      paths1.extractDir,
-      TEST_PORT,
-      "nextjs",
-      paths1.projectDir,
-    );
+    await DeployService.startApplication(paths1.extractDir, TEST_PORT, 'nextjs', paths1.projectDir);
 
     // Assert V1 is running
     const res = await fetch(`http://localhost:${TEST_PORT}`);
     expect(res.status).toBe(200);
-    expect(await res.text()).toBe("Hello v1");
+    expect(await res.text()).toBe('Hello v1');
   });
 
-  test("Should restart (redeploy) on same port", async () => {
+  test('Should restart (redeploy) on same port', async () => {
     // Prepare V2
     const paths2 = DeployService.getPaths(projectId, buildId2);
     mkdirSync(paths2.extractDir, { recursive: true });
@@ -81,14 +76,14 @@ describe("Redeploy Flow", () => {
             });
         `;
     writeFileSync(
-      join(paths2.extractDir, "package.json"),
+      join(paths2.extractDir, 'package.json'),
       JSON.stringify({
         scripts: {
-          start: "bun run server.ts",
+          start: 'bun run server.ts',
         },
       }),
     );
-    writeFileSync(join(paths2.extractDir, "server.ts"), script);
+    writeFileSync(join(paths2.extractDir, 'server.ts'), script);
 
     // Perform "Stop/Kill" then "Start" (simulating activateDeployment logic)
     // 1. Kill old
@@ -97,28 +92,23 @@ describe("Redeploy Flow", () => {
     // Verify dead
     try {
       await fetch(`http://localhost:${TEST_PORT}`);
-      throw new Error("Should be down");
+      throw new Error('Should be down');
     } catch (e) {
       expect(e).toBeTruthy(); // Connection refused
     }
 
     // 2. Start New
-    await DeployService.startApplication(
-      paths2.extractDir,
-      TEST_PORT,
-      "nextjs",
-      paths2.projectDir,
-    );
+    await DeployService.startApplication(paths2.extractDir, TEST_PORT, 'nextjs', paths2.projectDir);
 
     // Assert V2 is running
     const res = await fetch(`http://localhost:${TEST_PORT}`);
     expect(res.status).toBe(200);
-    expect(await res.text()).toBe("Hello v2");
+    expect(await res.text()).toBe('Hello v2');
   });
 
   afterAll(async () => {
     // Cleanup
     await DeployService.killProcessOnPort(TEST_PORT);
-    await Bun.spawn(["rm", "-rf", "test-workspace"]).exited;
+    await Bun.spawn(['rm', '-rf', 'test-workspace']).exited;
   });
 });

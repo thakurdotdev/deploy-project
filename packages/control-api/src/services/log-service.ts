@@ -1,6 +1,6 @@
-import { db } from "../db";
-import { builds } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { db } from '../db';
+import { builds } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
 export const LogService = {
   async persist(buildId: string, logs: string) {
@@ -10,17 +10,14 @@ export const LogService = {
     const build = await db.select().from(builds).where(eq(builds.id, buildId));
     if (!build[0]) return;
 
-    const currentLogs = build[0].logs || "";
+    const currentLogs = build[0].logs || '';
     const newLogs = currentLogs + logs;
 
-    await db
-      .update(builds)
-      .set({ logs: newLogs })
-      .where(eq(builds.id, buildId));
+    await db.update(builds).set({ logs: newLogs }).where(eq(builds.id, buildId));
   },
 
   async getLogs(buildId: string) {
     const build = await db.select().from(builds).where(eq(builds.id, buildId));
-    return build[0]?.logs || "";
+    return build[0]?.logs || '';
   },
 };

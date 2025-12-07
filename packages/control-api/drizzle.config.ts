@@ -1,12 +1,11 @@
-import type { Config } from "drizzle-kit";
+import type { Config } from 'drizzle-kit';
 
 export default {
-  schema: "./src/db/schema.ts",
-  out: "./drizzle",
-  driver: "pg",
+  schema: './src/db/schema.ts',
+  out: './drizzle',
+  driver: 'pg',
   dbCredentials: {
     connectionString:
-      process.env.DATABASE_URL ||
-      "postgres://postgres:postgres@localhost:5432/mini_vercel",
+      process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/mini_vercel',
   },
 } satisfies Config;

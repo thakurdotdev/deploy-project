@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { api } from "@/lib/api";
-import { Trash2, Plus, Eye, EyeOff, Save, Loader2 } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { api } from '@/lib/api';
+import { Trash2, Plus, Eye, EyeOff, Save, Loader2 } from 'lucide-react';
 
 export function EnvVarForm({
   projectId,
@@ -28,7 +28,7 @@ export function EnvVarForm({
   }, [initialVars]);
 
   const addEnvVar = () => {
-    setVars([...vars, { key: "", value: "" }]);
+    setVars([...vars, { key: '', value: '' }]);
     setHasChanges(true);
   };
 
@@ -39,11 +39,7 @@ export function EnvVarForm({
     setHasChanges(true);
   };
 
-  const updateEnvVar = (
-    index: number,
-    field: "key" | "value",
-    value: string,
-  ) => {
+  const updateEnvVar = (index: number, field: 'key' | 'value', value: string) => {
     const newVars = [...vars];
     newVars[index][field] = value;
     setVars(newVars);
@@ -51,11 +47,11 @@ export function EnvVarForm({
   };
 
   const handlePaste = (e: React.ClipboardEvent, index: number) => {
-    const text = e.clipboardData.getData("text");
-    if (text.includes("\n") || text.includes("=")) {
+    const text = e.clipboardData.getData('text');
+    if (text.includes('\n') || text.includes('=')) {
       e.preventDefault();
       const pastedVars: { key: string; value: string }[] = [];
-      text.split("\n").forEach((line) => {
+      text.split('\n').forEach((line) => {
         const match = line.match(/^([^=]+)=(.*)$/);
         if (match) {
           pastedVars.push({ key: match[1].trim(), value: match[2].trim() });
@@ -64,8 +60,7 @@ export function EnvVarForm({
 
       if (pastedVars.length > 0) {
         const currentVars = [...vars];
-        const isCurrentRowEmpty =
-          !currentVars[index].key && !currentVars[index].value;
+        const isCurrentRowEmpty = !currentVars[index].key && !currentVars[index].value;
         if (isCurrentRowEmpty) {
           currentVars.splice(index, 1, ...pastedVars);
         } else {
@@ -89,17 +84,15 @@ export function EnvVarForm({
 
       await Promise.all([
         ...toDelete.map((v) => api.deleteEnvVar(projectId, v.key)),
-        ...toUpsert.map((v) =>
-          api.addEnvVar(projectId, { key: v.key, value: v.value }),
-        ),
+        ...toUpsert.map((v) => api.addEnvVar(projectId, { key: v.key, value: v.value })),
       ]);
 
       onUpdate(); // Reload from server
       setHasChanges(false);
-      alert("Saved changes!");
+      alert('Saved changes!');
     } catch (e) {
       console.error(e);
-      alert("Failed to save changes");
+      alert('Failed to save changes');
     } finally {
       setLoading(false);
     }
@@ -116,14 +109,10 @@ export function EnvVarForm({
             className="h-8 w-8 text-muted-foreground"
             onClick={() => setShowValues(!showValues)}
           >
-            {showValues ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
-              <Eye className="w-4 h-4" />
-            )}
+            {showValues ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </Button>
           <span className="text-sm text-muted-foreground">
-            {showValues ? "Hide Values" : "Show Values"}
+            {showValues ? 'Hide Values' : 'Show Values'}
           </span>
         </div>
         <div className="flex gap-2">
@@ -154,17 +143,17 @@ export function EnvVarForm({
             <Input
               placeholder="KEY"
               value={env.key}
-              onChange={(e) => updateEnvVar(index, "key", e.target.value)}
+              onChange={(e) => updateEnvVar(index, 'key', e.target.value)}
               onPaste={(e) => handlePaste(e, index)}
               className="font-mono text-xs"
             />
             <Input
               placeholder="VALUE"
               value={env.value}
-              onChange={(e) => updateEnvVar(index, "value", e.target.value)}
+              onChange={(e) => updateEnvVar(index, 'value', e.target.value)}
               onPaste={(e) => handlePaste(e, index)}
               className="font-mono text-xs"
-              type={showValues ? "text" : "password"}
+              type={showValues ? 'text' : 'password'}
             />
             <Button
               variant="ghost"

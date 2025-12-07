@@ -1,6 +1,6 @@
-import { db } from "../db";
-import { projects } from "../db/schema";
-import { eq, sql } from "drizzle-orm";
+import { db } from '../db';
+import { projects } from '../db/schema';
+import { eq, sql } from 'drizzle-orm';
 
 export const ProjectService = {
   async getAll() {
@@ -17,7 +17,7 @@ export const ProjectService = {
     github_url: string;
     root_directory?: string;
     build_command: string;
-    app_type: "nextjs" | "vite";
+    app_type: 'nextjs' | 'vite';
     domain?: string;
     env_vars?: Record<string, string>;
   }) {
@@ -32,15 +32,14 @@ export const ProjectService = {
 
     // Check availability loop
     // Check availability loop
-    const deployEngineUrl =
-      process.env.DEPLOY_ENGINE_URL || "http://localhost:4002";
+    const deployEngineUrl = process.env.DEPLOY_ENGINE_URL || 'http://localhost:4002';
 
     while (true) {
       let available = false;
       try {
         const res = await fetch(`${deployEngineUrl}/ports/check`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ port: nextPort }),
         });
         if (res.ok) {
@@ -48,27 +47,25 @@ export const ProjectService = {
           available = data.available;
         }
       } catch (e) {
-        console.error("Failed to check port availability on Deploy Engine", e);
-        throw new Error("Deploy Engine unreachable for port check");
+        console.error('Failed to check port availability on Deploy Engine', e);
+        throw new Error('Deploy Engine unreachable for port check');
       }
 
       if (available) {
         break;
       }
-      console.log(
-        `Port ${nextPort} is in use on Deploy Engine, checking next...`,
-      );
+      console.log(`Port ${nextPort} is in use on Deploy Engine, checking next...`);
       nextPort++;
     }
 
     // Determine domain (Auto-generate in Production if missing)
     let domain = data.domain?.trim() || null;
-    if (process.env.NODE_ENV === "production" && !domain) {
-      const baseDomain = process.env.BASE_DOMAIN || "thakur.dev";
+    if (process.env.NODE_ENV === 'production' && !domain) {
+      const baseDomain = process.env.BASE_DOMAIN || 'thakur.dev';
       const slug = data.name
         .toLowerCase()
-        .replace(/[^a-z0-9-]/g, "-")
-        .replace(/^-+|-+$/g, "");
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/^-+|-+$/g, '');
       domain = `${slug}.${baseDomain}`;
     }
 
@@ -89,7 +86,7 @@ export const ProjectService = {
 
     // Save env vars if provided
     if (data.env_vars) {
-      const { EnvService } = await import("./env-service");
+      const { EnvService } = await import('./env-service');
       for (const [key, value] of Object.entries(data.env_vars)) {
         await EnvService.create(projectId, key, value);
       }
@@ -101,7 +98,7 @@ export const ProjectService = {
   async update(id: string, data: Partial<typeof projects.$inferInsert>) {
     const updateData = { ...data };
     const domain = updateData.domain;
-    if (typeof domain === "string" && domain.trim() === "") {
+    if (typeof domain === 'string' && domain.trim() === '') {
       updateData.domain = null;
     }
     const result = await db
@@ -117,9 +114,7 @@ export const ProjectService = {
     if (!project) return null;
 
     // 1. Get all builds for this project to clean up artifacts
-    const { builds, deployments, environmentVariables } = await import(
-      "../db/schema"
-    );
+    const { builds, deployments, environmentVariables } = await import('../db/schema');
 
     const projectBuilds = await db
       .select({ id: builds.id })
@@ -128,20 +123,19 @@ export const ProjectService = {
     const buildIds = projectBuilds.map((b) => b.id);
 
     // 2. Call Deploy Engine to cleanup
-    const deployEngineUrl =
-      process.env.DEPLOY_ENGINE_URL || "http://localhost:4002";
+    const deployEngineUrl = process.env.DEPLOY_ENGINE_URL || 'http://localhost:4002';
     try {
       if (project.port) {
         const subdomain =
-          project.domain?.split(".")[0] ||
+          project.domain?.split('.')[0] ||
           project.name
             .toLowerCase()
-            .replace(/[^a-z0-9-]/g, "-")
-            .replace(/^-+|-+$/g, "");
+            .replace(/[^a-z0-9-]/g, '-')
+            .replace(/^-+|-+$/g, '');
 
         await fetch(`${deployEngineUrl}/projects/${id}/delete`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             port: project.port,
             subdomain,
@@ -150,7 +144,7 @@ export const ProjectService = {
         });
       }
     } catch (e) {
-      console.error("Failed to cleanup on Deploy Engine", e);
+      console.error('Failed to cleanup on Deploy Engine', e);
       // Continue with DB deletion even if cleanup fails
     }
 
@@ -158,9 +152,7 @@ export const ProjectService = {
 
     await db.transaction(async (tx) => {
       // Delete env vars
-      await tx
-        .delete(environmentVariables)
-        .where(eq(environmentVariables.project_id, id));
+      await tx.delete(environmentVariables).where(eq(environmentVariables.project_id, id));
       // Delete deployments
       await tx.delete(deployments).where(eq(deployments.project_id, id));
       // Delete builds

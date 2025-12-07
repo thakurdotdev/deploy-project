@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { ModeToggle } from "@/components/theme-toggle";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { ModeToggle } from '@/components/theme-toggle';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,13 +10,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { authClient } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
-import { FolderGit2, LayoutDashboard, LogOut } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+} from '@/components/ui/dropdown-menu';
+import { authClient } from '@/lib/auth-client';
+import { cn } from '@/lib/utils';
+import { FolderGit2, LayoutDashboard, LogOut } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -25,16 +25,16 @@ export function Navbar() {
 
   const routes = [
     {
-      href: "/",
-      label: "Dashboard",
+      href: '/',
+      label: 'Dashboard',
       icon: LayoutDashboard,
-      active: pathname === "/",
+      active: pathname === '/',
     },
     {
-      href: "/projects/new",
-      label: "New Project",
+      href: '/projects/new',
+      label: 'New Project',
       icon: FolderGit2,
-      active: pathname === "/projects/new",
+      active: pathname === '/projects/new',
     },
   ];
 
@@ -53,8 +53,8 @@ export function Navbar() {
                   key={route.href}
                   href={route.href}
                   className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary flex items-center gap-2",
-                    route.active ? "text-foreground" : "text-muted-foreground",
+                    'text-sm font-medium transition-colors hover:text-primary flex items-center gap-2',
+                    route.active ? 'text-foreground' : 'text-muted-foreground',
                   )}
                 >
                   <route.icon className="w-4 h-4" />
@@ -68,27 +68,17 @@ export function Navbar() {
           {session ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="relative h-8 w-8 rounded-full"
-                >
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={session.user.image || ""}
-                      alt={session.user.name}
-                    />
-                    <AvatarFallback>
-                      {session.user.name.charAt(0)}
-                    </AvatarFallback>
+                    <AvatarImage src={session.user.image || ''} alt={session.user.name} />
+                    <AvatarFallback>{session.user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {session.user.name}
-                    </p>
+                    <p className="text-sm font-medium leading-none">{session.user.name}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {session.user.email}
                     </p>
@@ -99,8 +89,8 @@ export function Navbar() {
                   onClick={() =>
                     authClient.signOut({
                       fetchOptions: {
-                        credentials: "include",
-                        onSuccess: () => router.push("/login"),
+                        credentials: 'include',
+                        onSuccess: () => router.push('/login'),
                       },
                     })
                   }

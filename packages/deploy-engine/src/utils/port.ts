@@ -1,11 +1,11 @@
-import { createServer } from "net";
+import { createServer } from 'net';
 
 export function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const server = createServer();
 
-    server.once("error", (err: any) => {
-      if (err.code === "EADDRINUSE") {
+    server.once('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
         resolve(false);
       } else {
         // Other error (permission?), assume unavailable to be safe
@@ -13,7 +13,7 @@ export function isPortAvailable(port: number): Promise<boolean> {
       }
     });
 
-    server.once("listening", () => {
+    server.once('listening', () => {
       server.close(() => {
         resolve(true);
       });
