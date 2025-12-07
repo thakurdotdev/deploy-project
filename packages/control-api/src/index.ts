@@ -99,5 +99,5 @@ io.attach(server);
 
 // 6. Listen on port 4000
 server.listen(4000, () => {
-  console.log('Control API + Socket.IO running on port 4000');
+  console.log('Control API + Socket.IO running on port 4000 🚀');
 });
