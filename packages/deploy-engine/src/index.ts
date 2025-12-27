@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { DeployService } from './services/deploy-service';
 import { NginxService } from './services/nginx-service';
+import { DockerService } from './services/docker';
 
 import { isPortAvailable } from './utils/port';
 
@@ -100,3 +101,15 @@ if (process.env.NODE_ENV === 'production') {
     console.error('Failed to initialize Nginx default config:', e);
   });
 }
+
+// Initialize Nginx Default Config (Production Only)
+if (process.env.NODE_ENV === 'production') {
+  NginxService.createDefaultConfig().catch((e) => {
+    console.error('Failed to initialize Nginx default config:', e);
+  });
+}
+
+// Recover Docker log streams (for all envs)
+DockerService.recoverLogStreams().catch((e) => {
+  console.error('Failed to recover Docker log streams:', e);
+});

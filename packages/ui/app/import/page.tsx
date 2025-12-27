@@ -7,13 +7,15 @@ import { api } from '@/lib/api';
 import { InstallationSelector, GitInstallation } from '@/components/github/installation-selector';
 import { RepositoryList, GitRepository } from '@/components/github/repository-list';
 import { ProjectConfigForm, ProjectConfig } from '@/components/github/project-config-form';
+import { GitBranch, User, Settings2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export default function ImportPage() {
   const router = useRouter();
 
   // State
   const [step, setStep] = useState<'installations' | 'repos' | 'config'>('installations');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Data
   const [installations, setInstallations] = useState<GitInstallation[]>([]);
@@ -46,13 +48,12 @@ export default function ImportPage() {
             newUrl.searchParams.delete('setup_action');
             router.replace(newUrl.pathname);
           }
-        } else if (data.installations.length === 1) {
-          // Auto-select if only one exists (Optional UX preference)
-          // handleInstallationSelect(data.installations[0].id);
         }
       } catch (e) {
         console.error(e);
         toast.error('Failed to load GitHub installations');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -107,7 +108,6 @@ export default function ImportPage() {
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || 'Deployment failed');
-    } finally {
       setLoading(false);
     }
   };
@@ -117,16 +117,80 @@ export default function ImportPage() {
   };
 
   return (
-    <div className="container mx-auto py-10 max-w-4xl px-4">
-      <h1 className="text-3xl font-bold mb-2">Import Git Repository</h1>
-      <p className="text-muted-foreground mb-8">
-        Connect your GitHub account and select a repository to deploy.
-      </p>
+    <div className="container mx-auto py-12 max-w-3xl px-4 min-h-[calc(100vh-64px)]">
+      <div className="mb-10 text-center space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight text-white glow-text">
+          Import Git Repository
+        </h1>
+        <p className="text-zinc-400 max-w-lg mx-auto">
+          Deploy your GitHub repositories instantly. Connect your account, select a project, and
+          we'll handle the rest.
+        </p>
+      </div>
 
-      <div className="space-y-6">
-        {/* Step 1: Installation Selection */}
-        {(step === 'installations' || step === 'repos' || step === 'config') && (
-          <div className={step !== 'installations' ? 'opacity-60 pointer-events-none' : ''}>
+      {/* Progress Steps (Visual only) */}
+      <div className="mb-10 flex justify-center items-center gap-4 text-sm font-medium">
+        <div
+          className={cn(
+            'flex items-center gap-2',
+            step === 'installations' ? 'text-white' : 'text-zinc-500',
+          )}
+        >
+          <div
+            className={cn(
+              'w-8 h-8 rounded-full flex items-center justify-center border',
+              step === 'installations'
+                ? 'border-white bg-white/10 text-white'
+                : 'border-zinc-800 bg-zinc-900',
+            )}
+          >
+            <User className="w-4 h-4" />
+          </div>
+          <span>Account</span>
+        </div>
+        <div className="w-8 h-px bg-zinc-800" />
+        <div
+          className={cn(
+            'flex items-center gap-2',
+            step === 'repos' ? 'text-white' : 'text-zinc-500',
+          )}
+        >
+          <div
+            className={cn(
+              'w-8 h-8 rounded-full flex items-center justify-center border',
+              step === 'repos'
+                ? 'border-white bg-white/10 text-white'
+                : 'border-zinc-800 bg-zinc-900',
+            )}
+          >
+            <GitBranch className="w-4 h-4" />
+          </div>
+          <span>Repository</span>
+        </div>
+        <div className="w-8 h-px bg-zinc-800" />
+        <div
+          className={cn(
+            'flex items-center gap-2',
+            step === 'config' ? 'text-white' : 'text-zinc-500',
+          )}
+        >
+          <div
+            className={cn(
+              'w-8 h-8 rounded-full flex items-center justify-center border',
+              step === 'config'
+                ? 'border-white bg-white/10 text-white'
+                : 'border-zinc-800 bg-zinc-900',
+            )}
+          >
+            <Settings2 className="w-4 h-4" />
+          </div>
+          <span>Configure</span>
+        </div>
+      </div>
+
+      <div className="relative">
+        {step === 'installations' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <InstallationSelector
               installations={installations}
               selectedId={selectedInstallation}
@@ -136,18 +200,14 @@ export default function ImportPage() {
           </div>
         )}
 
-        {/* Step 2: Repository Selection */}
-        {(step === 'repos' || step === 'config') && (
-          <div className={step !== 'repos' ? 'hidden' : ''}>
-            <RepositoryList
-              repositories={repositories}
-              loading={loading}
-              onSelect={handleRepoSelect}
-            />
-          </div>
+        {step === 'repos' && (
+          <RepositoryList
+            repositories={repositories}
+            loading={loading}
+            onSelect={handleRepoSelect}
+          />
         )}
 
-        {/* Step 3: Config */}
         {step === 'config' && selectedRepo && (
           <ProjectConfigForm
             repo={selectedRepo}

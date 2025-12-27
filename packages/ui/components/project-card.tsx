@@ -1,134 +1,167 @@
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowRight, GitBranch, Github } from 'lucide-react';
-import Image from 'next/image';
+import { GitBranch, Github, ExternalLink, Clock, MoreHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 import { getFrameworkOption } from '@/lib/framework-config';
+import { cn } from '@/lib/utils';
+import { Project } from '@/lib/types';
 
-export function ProjectCard({ project }: { project: any }) {
-  const faviconUrl = project.domain
-    ? `https://www.google.com/s2/favicons?domain=${project.domain}&sz=128`
-    : `https://www.google.com/s2/favicons?domain=localhost&sz=128`;
+// Framework Icons mapping
+const FrameworkIcon = ({ type, className }: { type: string; className?: string }) => {
+  // Simple SVG icons representing frameworks
+  switch (type) {
+    case 'nextjs':
+      return (
+        <svg
+          viewBox="0 0 180 180"
+          className={className}
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M128.166 180H0V0H180V180H128.166ZM90 28.3333L28.3333 133.333H51.6667L99.1667 52.5V133.333H121.667V28.3333H90ZM121.667 151.667V180H151.667V151.667H121.667Z"
+            fill="white"
+          />
+        </svg>
+      );
+    case 'vite':
+    case 'react':
+      return (
+        <svg
+          viewBox="0 0 256 228"
+          className={className}
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMidYMid"
+        >
+          <path
+            fill="#00D8FF"
+            d="M210.63 227.35l-95.2-166.4-1.12-1.95v168.35H210.63zM45.37 227.35l95.2-166.4 1.12-1.95v168.35L45.37 227.35zM.05 111.36l66.49 116h122.92L128 111.36 .05 111.36zM151.04 0L128 40.09 104.96 0H151.04z"
+          />
+          <circle cx="128" cy="114" r="23" fill="#FFF" />
+        </svg>
+      );
+    default:
+      // Default generic code/globe icon
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          className={className}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 6.75h12a.75.75 0 01.75.75v9a.75.75 0 01-.75.75H6a.75.75 0 01-.75-.75v-9a.75.75 0 01.75-.75z"
+          />
+        </svg>
+      );
+  }
+};
 
+export function ProjectCard({ project }: { project: Project }) {
   const isReady = !!project.domain;
-
-  const FrameworkBadge = ({ type }: { type: string }) => {
-    const framework = getFrameworkOption(type as any);
-    return (
-      <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal tracking-wide">
-        {framework?.label ?? type}
-      </Badge>
-    );
-  };
+  const framework = getFrameworkOption(project.app_type);
 
   return (
-    <Card className="group relative flex flex-col justify-between overflow-hidden border bg-background text-foreground h-full hover:border-foreground/20 transition-all duration-200 hover:shadow-lg">
+    <Card className="group relative flex flex-col justify-between overflow-hidden border bg-card hover:border-sidebar-accent hover:shadow-md transition-all duration-200">
       <Link
         href={`/projects/${project.id}`}
         className="absolute inset-0 z-0"
         aria-label={`View ${project.name}`}
       />
 
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 p-5 relative z-10 pointer-events-none">
-        <div className="flex items-center gap-4 pointer-events-auto">
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border bg-muted/20 p-1.5 shadow-sm">
-            <Image
-              src={faviconUrl}
-              alt={project.name}
-              width={40}
-              height={40}
-              className="object-contain"
-              unoptimized
-            />
+      <div className="flex flex-col h-full">
+        <div className="p-5 flex-1">
+          {/* Header */}
+          <div className="flex items-start gap-4 mb-6">
+            <div className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center bg-muted border border-border">
+              <FrameworkIcon type={project.app_type} className="w-5 h-5 text-foreground" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between mb-0.5">
+                <h3 className="font-semibold text-sm truncate text-foreground pr-4">
+                  {project.name}
+                </h3>
+              </div>
+              <a
+                href={
+                  project.domain
+                    ? project.domain.startsWith('http')
+                      ? project.domain
+                      : `https://${project.domain}`
+                    : '#'
+                }
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => {
+                  if (!project.domain) e.preventDefault();
+                  e.stopPropagation();
+                }}
+                className={cn(
+                  'text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 pointer-events-auto truncate max-w-full',
+                  !project.domain && 'cursor-default hover:text-muted-foreground',
+                )}
+              >
+                <span className="truncate">{project.domain || 'Not deployed'}</span>
+                {project.domain && <ExternalLink className="w-3 h-3 opacity-50" />}
+              </a>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <CardTitle className="text-base font-semibold leading-none tracking-tight flex items-center gap-2">
-              {project.name}
-            </CardTitle>
-            <a
-              href={
-                project.domain
-                  ? project.domain.startsWith('http')
-                    ? project.domain
-                    : `https://${project.domain}`
-                  : '#'
-              }
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => {
-                if (!project.domain) e.preventDefault();
-                e.stopPropagation();
-              }}
-              className={`text-xs text-muted-foreground font-mono mt-1.5 hover:text-foreground transition-colors flex items-center gap-1 ${!project.domain && 'cursor-default hover:text-muted-foreground'}`}
-            >
-              {project.domain || 'Not deployed'}
-            </a>
-          </div>
-        </div>
-        <div className="pointer-events-auto">
-          <FrameworkBadge type={project.app_type} />
-        </div>
-      </CardHeader>
 
-      <CardContent className="px-5 pb-5 relative z-10 pointer-events-none">
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <span className={`relative flex h-2 w-2`}>
-              <span
-                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isReady ? 'bg-emerald-400' : 'bg-amber-400'}`}
-              ></span>
-              <span
-                className={`relative inline-flex rounded-full h-2 w-2 ${isReady ? 'bg-emerald-500' : 'bg-amber-500'}`}
-              ></span>
-            </span>
-            <span className={`font-medium ${isReady ? 'text-foreground' : ''}`}>
-              {isReady ? 'Ready' : 'Building'}
-            </span>
-          </div>
-          <span>•</span>
-          <span>{timeAgo(new Date(project.created_at))}</span>
-        </div>
-      </CardContent>
+          {/* Status & Git Info */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs">
+              <span className={cn('relative flex h-2 w-2')}>
+                <span
+                  className={cn(
+                    'animate-ping absolute inline-flex h-full w-full rounded-full opacity-75',
+                    isReady ? 'bg-emerald-400' : 'bg-amber-400',
+                  )}
+                ></span>
+                <span
+                  className={cn(
+                    'relative inline-flex rounded-full h-2 w-2',
+                    isReady ? 'bg-emerald-500' : 'bg-amber-500',
+                  )}
+                ></span>
+              </span>
+              <span className="font-medium text-foreground">{isReady ? 'Ready' : 'Building'}</span>
 
-      <CardFooter className="bg-muted/20 p-3 text-xs text-muted-foreground flex justify-between items-center border-t border-border/40 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 hover:text-foreground transition-colors pointer-events-auto">
+              <span className="text-muted-foreground mx-1">•</span>
+              <span className="text-muted-foreground">{timeAgo(new Date(project.created_at))}</span>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full border border-border/50 max-w-[120px]">
+                <GitBranch className="w-3 h-3 opacity-70" />
+                <span className="font-mono truncate">{project.github_branch || 'main'}</span>
+              </div>
+              <span className="truncate flex-1">Latest commit from GitHub</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Minimal Footer */}
+        <div className="px-5 py-3 border-t bg-muted/30 flex items-center justify-between z-10 relative">
+          <div className="flex items-center gap-2 hover:text-foreground transition-colors pointer-events-auto text-xs text-muted-foreground">
             <Github className="h-3.5 w-3.5" />
             <a
               href={project.github_url}
               target="_blank"
               rel="noreferrer"
-              className="font-medium hover:underline truncate max-w-[140px]"
+              className="font-medium hover:underline truncate max-w-[200px]"
               onClick={(e) => e.stopPropagation()}
             >
-              {project.github_url.split('/').slice(-2).join('/')}
+              {project.github_url.replace('https://github.com/', '')}
             </a>
           </div>
-          <div className="flex items-center gap-1.5">
-            <GitBranch className="h-3.5 w-3.5" />
-            <span className="font-mono">main</span>
-          </div>
         </div>
-
-        {project.domain && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs gap-1.5 pointer-events-auto hover:bg-background border border-transparent hover:border-border/50"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              window.open(
-                project.domain.startsWith('http') ? project.domain : `https://${project.domain}`,
-                '_blank',
-              );
-            }}
-          >
-            Visit <ArrowRight className="h-3 w-3 opacity-50" />
-          </Button>
-        )}
-      </CardFooter>
+      </div>
     </Card>
   );
 }

@@ -10,10 +10,17 @@ import {
 } from '../config/framework-config';
 import { LogService } from './log-service';
 import { NginxService } from './nginx-service';
+import { DockerService } from './docker';
 
 const BASE_DIR = process.env.BASE_DIR || join(process.cwd(), 'apps');
 const ARTIFACTS_DIR = join(BASE_DIR, 'artifacts');
 const IS_PLATFORM_PROD = process.env.PLATFORM_ENV === 'production';
+
+/**
+ * Feature flag for Docker deployments.
+ * Set USE_DOCKER=true to enable containerized deployments.
+ */
+const USE_DOCKER = process.env.USE_DOCKER === 'true';
 
 // Ensure base dirs exist
 if (!existsSync(ARTIFACTS_DIR)) {
@@ -84,22 +91,41 @@ export const DeployService = {
       timeoutMs: 8000,
     });
 
-    // internal log only - don't expose symlink details to user
+    // Update symlink for tracking
     await retry(() => this.updateSymlink(paths.projectDir, paths.extractDir, buildId), {
       name: 'symlink update',
     });
 
-    await this.killProjectProcess(projectId, port);
+    // Use Docker or direct process based on feature flag
+    if (USE_DOCKER) {
+      await LogService.stream(buildId, 'Using Docker containerization...');
 
-    await LogService.stream(buildId, `Starting ${appType} application...`);
-    await this.startApplication(
-      paths.extractDir,
-      port,
-      appType,
-      paths.projectDir,
-      buildId,
-      envVars,
-    );
+      const result = await DockerService.deploy(
+        projectId,
+        buildId,
+        paths.extractDir,
+        port,
+        appType,
+        envVars,
+      );
+
+      if (!result.success) {
+        throw new Error(`Docker deployment failed: ${result.error}`);
+      }
+    } else {
+      // Legacy: direct process execution
+      await this.killProjectProcess(projectId, port);
+
+      await LogService.stream(buildId, `Starting ${appType} application...`);
+      await this.startApplication(
+        paths.extractDir,
+        port,
+        appType,
+        paths.projectDir,
+        buildId,
+        envVars,
+      );
+    }
 
     if (IS_PLATFORM_PROD) {
       await LogService.stream(buildId, `Configuring domain...`);
@@ -117,7 +143,11 @@ export const DeployService = {
     if (buildId) await LogService.stream(buildId, 'Stopping deployment...');
 
     if (projectId) {
-      await this.killProjectProcess(projectId, port);
+      if (USE_DOCKER) {
+        await DockerService.stop(projectId, buildId);
+      } else {
+        await this.killProjectProcess(projectId, port);
+      }
     } else {
       await this.ensurePortFree(port);
     }
@@ -127,15 +157,20 @@ export const DeployService = {
   },
 
   async deleteProject(projectId: string, port?: number, subdomain?: string, buildIds?: string[]) {
-    if (port) {
+    // Stop and cleanup Docker resources
+    if (USE_DOCKER) {
+      await DockerService.cleanup(projectId, buildIds);
+    } else if (port) {
       await this.killProjectProcess(projectId, port);
     }
 
+    // Cleanup filesystem
     const projectDir = join(BASE_DIR, projectId);
     if (existsSync(projectDir)) {
       await rm(projectDir, { recursive: true, force: true });
     }
 
+    // Cleanup artifacts
     if (buildIds) {
       for (const id of buildIds) {
         const p = join(ARTIFACTS_DIR, `${id}.tar.gz`);
@@ -143,6 +178,7 @@ export const DeployService = {
       }
     }
 
+    // Cleanup nginx
     if (IS_PLATFORM_PROD && subdomain) {
       await retry(() => NginxService.removeConfig(subdomain), {
         name: `nginx cleanup ${subdomain}`,

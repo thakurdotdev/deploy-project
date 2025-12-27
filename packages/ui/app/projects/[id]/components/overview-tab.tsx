@@ -24,42 +24,53 @@ export function OverviewTab({
 }: OverviewTabProps) {
   return (
     <div className="space-y-8 animate-in fade-in-50 duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Hero Card - Active Deployment */}
-        <div className="md:col-span-2">
-          <ActiveDeploymentCard
-            activeDeployment={activeDeployment}
-            project={project}
-            onStopDeployment={onStopDeployment}
-            onTriggerBuild={onTriggerBuild}
-          />
-        </div>
+      {/* Hero Card - Active Deployment */}
+      <ActiveDeploymentCard
+        activeDeployment={activeDeployment}
+        project={project}
+        onStopDeployment={onStopDeployment}
+        onTriggerBuild={onTriggerBuild}
+      />
 
-        {/* Project Details */}
-        <Card className="border-border/50 shadow-sm">
-          <CardHeader>
-            <CardTitle>Details</CardTitle>
+      {/* Project Specs */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-border/50 shadow-sm bg-muted/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Framework
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Framework</div>
-              <div className="flex items-center gap-2">
-                <Layout className="w-4 h-4 text-muted-foreground" />
-                <span className="capitalize">{project.app_type}</span>
-              </div>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Layout className="w-5 h-5 text-zinc-400" />
+              <span className="capitalize font-semibold text-lg">{project.app_type}</span>
             </div>
-            <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Build Command</div>
-              <code className="bg-muted px-2 py-1 rounded text-xs font-mono">
-                {project.build_command}
-              </code>
-            </div>
-            <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Root Directory</div>
-              <code className="bg-muted px-2 py-1 rounded text-xs font-mono">
-                {project.root_directory || './'}
-              </code>
-            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 shadow-sm bg-muted/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Build Command
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <code className="bg-black/50 border border-zinc-800 px-3 py-1.5 rounded text-sm font-mono text-zinc-300">
+              {project.build_command}
+            </code>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 shadow-sm bg-muted/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+              Root Directory
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <code className="bg-black/50 border border-zinc-800 px-3 py-1.5 rounded text-sm font-mono text-zinc-300">
+              {project.root_directory || './'}
+            </code>
           </CardContent>
         </Card>
       </div>

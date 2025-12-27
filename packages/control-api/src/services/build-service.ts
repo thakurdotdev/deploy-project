@@ -97,24 +97,16 @@ export const BuildService = {
       .where(eq(builds.id, id))
       .returning();
 
-    // Auto-activate if it's the first successful build
+    // Auto-activate on successful builds
     if (status === 'success' && updated) {
-      const activeDeployments = await db
-        .select()
-        .from(deployments)
-        .where(
-          and(eq(deployments.project_id, updated.project_id), eq(deployments.status, 'active')),
-        );
-
-      if (activeDeployments.length === 0) {
-        console.log(
-          `[BuildService] No active deployments for project ${updated.project_id}. Auto-activating build ${id}.`,
-        );
-        try {
-          await DeploymentService.activateBuild(updated.project_id, id);
-        } catch (e) {
-          console.error(`[BuildService] Auto-activation failed:`, e);
-        }
+      console.log(
+        `[BuildService] Auto-activating successful build ${id} for project ${updated.project_id}`,
+      );
+      try {
+        await DeploymentService.activateBuild(updated.project_id, id);
+        console.log(`[BuildService] Deployment activated successfully`);
+      } catch (e) {
+        console.error(`[BuildService] Auto-activation failed:`, e);
       }
     }
 

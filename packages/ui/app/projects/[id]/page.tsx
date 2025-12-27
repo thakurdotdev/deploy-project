@@ -4,7 +4,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect, useState, Activity } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { toast } from 'sonner';
 import { DeploymentsTab } from './components/deployments-tab';
@@ -162,7 +162,8 @@ function ProjectDetailsContent() {
             </TabsTrigger>
           </TabsList>
 
-          <Activity mode={currentTab === 'overview' ? 'visible' : 'hidden'}>
+          {/* Content Visibility Wrapper */}
+          <div className={currentTab === 'overview' ? 'block' : 'hidden'}>
             <OverviewTab
               project={project}
               activeDeployment={activeDeployment}
@@ -171,19 +172,19 @@ function ProjectDetailsContent() {
               onTriggerBuild={triggerBuild}
               onActivateBuild={activateBuild}
             />
-          </Activity>
+          </div>
 
-          <Activity mode={currentTab === 'deployments' ? 'visible' : 'hidden'}>
+          <div className={currentTab === 'deployments' ? 'block' : 'hidden'}>
             <DeploymentsTab
               builds={builds}
               onActivateBuild={activateBuild}
               activeDeployment={activeDeployment}
             />
-          </Activity>
+          </div>
 
-          <Activity mode={currentTab === 'settings' ? 'visible' : 'hidden'}>
+          <div className={currentTab === 'settings' ? 'block' : 'hidden'}>
             <SettingsTab project={project} />
-          </Activity>
+          </div>
         </Tabs>
       </div>
     </div>
